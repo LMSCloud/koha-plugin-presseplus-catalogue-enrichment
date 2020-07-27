@@ -19,10 +19,13 @@ use base qw(Koha::Plugins::Base);
 
 use C4::Context;
 use C4::Auth;
+use C4::Images qw( PutImage );
 use Koha::Biblios;
 use Koha::Items;
 use Koha::Patrons;
 use Mojo::JSON qw(decode_json);;
+use File::Temp qw(tempfile);
+use GD::Image;
 
 our $VERSION = "0.01";
 our $MINIMUM_VERSION = "20.06";
@@ -177,7 +180,7 @@ sub tool_step2 {
     #apikey => $self->retrieve_data('apikey'),
     my $template = $self->get_template({ file => 'tool-step2.tt' });
 
-    my $issn_ean = $cgi->param('issn_ean');
+    my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
     my $release_code = $cgi->param('release_code');
     # TODO
     # my $json = REST API call
@@ -246,6 +249,12 @@ sub tool_step2 {
             itype         => $default_itemtype,
         }
     )->store;
+
+    my ($fh, $fn ) = tempfile( SUFFIX => '.cover', UNLINK => 1 );
+    my $cmd = sprintf q{wget -O %s https://cover.presseplus.eu/%s/%s/%s}, $fn, $self->retrieve_data('coversize')||200, $issn_ean, $release_code;
+    my $r = qx{$cmd}; # FIXME handle error
+    my $srcimage = GD::Image->new($fh);
+    C4::Images::PutImage( $biblionumber, $srcimage );
 
     $template->param(
         biblio => Koha::Biblios->find($biblionumber),
