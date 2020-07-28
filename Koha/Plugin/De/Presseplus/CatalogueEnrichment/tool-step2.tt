@@ -14,6 +14,6 @@
     <br/>
     <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber | uri %]">Go to the bibliographic record</a>
     <br/>
-    <a href="/cgi-bin/koha/plugins/run.pl?class=[% plugin.metadata.class | uri %]&method=tool">Receive another serial issue</a>
+    <a href="/cgi-bin/koha/plugins/run.pl?class=[% plugin.metadata.class | uri %]&method=tool">Catalogue another serial issue</a>
 
 [% INCLUDE 'intranet-bottom.inc' %]
