@@ -227,9 +227,9 @@ sub tool_step2 {
     for my $toc (@{$struct->{contentList}}) {
         $record->append_fields(
             MARC::Field->new(
-                '505', '0', '0',
+                '505', '0', '',
                 # FIXME in a or t?
-                'a' => sprintf ("%s - %s", $toc->{headline}, $toc->{content}),
+                #'a' => sprintf ("%s - %s", $toc->{headline}, $toc->{content}),
                 't' => sprintf ("%s - %s", $toc->{headline}, $toc->{content}),
             ) );    # FIXME How to display "headline - content"?
     }
