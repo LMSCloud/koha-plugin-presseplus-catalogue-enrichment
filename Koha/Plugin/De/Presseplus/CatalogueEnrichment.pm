@@ -19,10 +19,10 @@ use base qw(Koha::Plugins::Base);
 
 use C4::Context;
 use C4::Auth;
-use C4::Images qw( PutImage );
 use Koha::Biblios;
 use Koha::Items;
 use Koha::Patrons;
+use Koha::CoverImages;
 use Mojo::JSON qw(decode_json);;
 use File::Temp qw(tempfile);
 use GD::Image;
@@ -254,7 +254,7 @@ sub tool_step2 {
     my $cmd = sprintf q{wget -O %s https://cover.presseplus.eu/%s/%s/%s}, $fn, $self->retrieve_data('coversize')||200, $issn_ean, $release_code;
     my $r = qx{$cmd}; # FIXME handle error
     my $srcimage = GD::Image->new($fh);
-    C4::Images::PutImage( $biblionumber, $srcimage );
+    Koha::CoverImage->new({ biblionumber => $biblionumber, src_image => $srcimage })->store; # FIXME handle error
 
     $template->param(
         biblio => Koha::Biblios->find($biblionumber),
