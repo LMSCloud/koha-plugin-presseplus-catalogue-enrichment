@@ -49,6 +49,8 @@ sub new {
 
     my $self = $class->SUPER::new($args);
 
+    $self->{cgi} = CGI->new();
+
     return $self;
 }
 
@@ -99,6 +101,17 @@ sub intranet_js {
 
     return q|
     |;
+}
+
+sub intranet_catalog_biblio_enhancements_toolbar_button {
+    my ( $self ) = @_;
+    my $template = $self->get_template({
+        file => 'toolbar-button.tt'
+    });
+    $template->param(
+        biblionumber => scalar $self->{cgi}->param('biblionumber')
+    );
+    $template->output;
 }
 
 sub configure {
@@ -247,6 +260,7 @@ sub tool_step2 {
             homebranch    => $logged_in_user->branchcode,
             holdingbranch => $logged_in_user->branchcode,
             itype         => $default_itemtype,
+            # FIXME notforloan status? Otherwise it's "available"
         }
     )->store;
 
@@ -262,6 +276,96 @@ sub tool_step2 {
     );
 
     $self->output_html( $template->output() );
+}
+
+sub catalogue {
+    my ($self, $args) = @_;
+
+    my $cgi = $self->{cgi};
+    my $template = $self->get_template({
+        file => 'catalogue.tt'
+    });
+
+    # The biblio we're working with
+    my $biblionumber = $self->{cgi}->param('biblionumber');
+    my $biblio = Koha::Biblios->find( $biblionumber );
+    die "no biblio for biblionumber=$biblionumber" unless $biblio; # FIXME handle that gracefully
+
+    $template->param(
+        biblio => $biblio,
+        apikey => $self->retrieve_data('apikey'),
+    );
+
+    if ( $cgi->param('submitted') ) {
+
+        my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
+        my $release_code = $cgi->param('release_code');
+        # TODO
+        # my $json = REST API call
+        # my $struct = from_json $json;
+        # TODO handle errors
+        my $struct = {
+            "name"        => 'BRAVO',
+            "description" => "Größte Jugendzeitschrift",
+            "evt"         => "2018-08-01T00:00:00", # FIXME Where to store this date for items?
+            "releaseCode" => "2018017",
+            "contentList" => [
+                {
+                    "headline" => "Reich durch Klicks: Traumjob Webstar! Hast du das Zeugdazu?",
+                    "content" =>
+                      "+ Die besten Fame-Tricks von Dagi, Julien & Co."
+                },
+                {
+                    "headline" => "Vergiss mich nicht",
+                    "content" =>
+                      "Wie deine Ferienliebe etwas Besonderes wird..."
+                },
+                {
+                    "headline" => "Was ist los mit Justin?",
+                    "content"  => "Seine crazy Verwandlung"
+                }
+            ]
+        };
+        my $default_itemtype = 'BK'; # FIXME Must be configurable
+        $struct->{evt} =~ s|^(\d{4}-\d{2}-\d{2}).*$|$1|; # FIXME other format needed?
+        # 245$a = BRAVO
+        #    $n = 2018017
+        #    $p = "Größte Jugendzeitschrift"
+
+        my $logged_in_user = Koha::Patrons->find( C4::Context->userenv->{number} );
+
+        my @tocs;
+        for my $toc (@{$struct->{contentList}}) {
+            push @tocs, sprintf ("%s - %s", $toc->{headline}, $toc->{content}),
+        }
+
+        my $item = Koha::Item->new(
+            {
+                biblionumber  => $biblionumber,
+                barcode       => undef,                         # FIXME No barcode?
+                homebranch    => $logged_in_user->branchcode,
+                holdingbranch => $logged_in_user->branchcode,
+                itype         => $default_itemtype,
+                itemnotes     => join "\n", @tocs,
+            # FIXME notforloan status? Otherwise it's "available"
+            }
+        )->store;
+
+        my ($fh, $fn ) = tempfile( SUFFIX => '.cover', UNLINK => 1 );
+        my $cmd = sprintf q{wget -O %s https://cover.presseplus.eu/%s/%s/%s}, $fn, $self->retrieve_data('coversize')||200, $issn_ean, $release_code;
+        my $r = qx{$cmd}; # FIXME handle error
+        my $srcimage = GD::Image->new($fh);
+        Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $srcimage })->store; # FIXME handle error
+
+        $template->param(
+            biblio => Koha::Biblios->find($biblionumber),
+            plugin => $self,
+        );
+        print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber");
+        exit;
+    }
+
+    $self->output_html( $template->output );
 }
 
 1;
