@@ -374,7 +374,8 @@ sub catalogue {
             biblio => Koha::Biblios->find($biblionumber),
             plugin => $self,
         );
-        print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber");
+        #print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber");
+        print $cgi->redirect(sprintf "/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=%s&itemnumber=%s#edititem", $item->biblionumber, $item->itemnumber);
         exit;
     }
 
