@@ -16,23 +16,50 @@
 
     <!-- Notice our form here has no 'action', this is good, it means that our forms will always get passed back to 'plugins/run.pl'. You could hard code it instead if you prefer -->
     <form method="get">
-        <!-- Always pass these two parameters so the plugin system knows what to execute! -->
-        <input type="hidden" name="class" value="[% CLASS | html %]"/>
-        <input type="hidden" name="method" value="[% METHOD | html %]"/>
 
-        <label for="apikey">API keys: </label>
-        <input type="text" name="apikey" value="[% apikey | html %]" />
+        <fieldset class="rows">
+            <legend>Configuration</legend>
 
-        <br/>
+            <ol>
+                <li>
+                    <label for="apikey">API keys: </label>
+                    <input type="text" name="apikey" value="[% apikey | html %]" />
+                </li>
 
-        <label for="coversize">Cover size: </label>
-        <input type="text" name="coversize" value="[% coversize | html %]" />
+                <li>
+                    <label for="coversize">Cover size: </label>
+                    <input type="text" name="coversize" value="[% coversize | html %]" />
+                <li>
 
-        <p>
+                <li>
+                    <label class="radio" for="can_be_grouped">Serial number can be attached to an existing bibliographic record: </label>
+                    <label class="radio" for="can_be_grouped">
+                        [% IF can_be_grouped %]
+                            <input type="radio" id="can_be_grouped" name="can_be_grouped" value="1" checked="checked" />
+                        [% ELSE %]
+                            <input type="radio" id="can_be_grouped" name="can_be_grouped" value="1" />
+                        [% END %]
+                        Yes
+                    </label>
+                    <label class="radio" for="cannot_be_grouped">
+                        [% IF can_be_grouped %]
+                            <input type="radio" id="cannot_be_grouped" name="can_be_grouped" value="0" />
+                        [% ELSE %]
+                            <input type="radio" id="cannot_be_grouped" name="can_be_grouped" value="0" checked="checked" />
+                        [% END %]
+                        No
+                    </label>
+                <li>
+            </ol>
+        </fieldset>
 
-        <input type="hidden" name="save" value="1" />
+        <fieldset class="action">
+            <input type="hidden" name="save" value="1" />
+            <input type="hidden" name="class" value="[% CLASS | html %]"/>
+            <input type="hidden" name="method" value="[% METHOD | html %]"/>
 
-        <input type="submit" value="Save configuration" />
+            <input type="submit" value="Save configuration" />
+        </fieldset>
     </form>
 
     <hr/>

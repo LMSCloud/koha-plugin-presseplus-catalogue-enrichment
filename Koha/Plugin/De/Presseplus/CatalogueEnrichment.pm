@@ -19,6 +19,7 @@ use base qw(Koha::Plugins::Base);
 
 use C4::Context;
 use C4::Auth;
+use C4::Search;        # enabled_staff_search_views
 use Koha::Biblios;
 use Koha::Items;
 use Koha::Patrons;
@@ -125,8 +126,9 @@ sub configure {
         my $template = $self->get_template({ file => 'configure.tt' });
 
         $template->param(
-            apikey => $self->retrieve_data('apikey'),
-            coversize => $self->retrieve_data('coversize'),
+            apikey         => $self->retrieve_data('apikey'),
+            coversize      => $self->retrieve_data('coversize'),
+            can_be_grouped => $self->retrieve_data('can_be_grouped'),
         );
 
         $self->output_html( $template->output() );
@@ -134,8 +136,9 @@ sub configure {
     else {
         $self->store_data(
             {
-                apikey => scalar $cgi->param('apikey'),
-                coversize => scalar $cgi->param('coversize'),
+                apikey         => scalar $cgi->param('apikey'),
+                coversize      => scalar $cgi->param('coversize'),
+                can_be_grouped => scalar $cgi->param('can_be_grouped'),
             }
         );
         $self->go_home();
@@ -368,6 +371,7 @@ sub catalogue {
         exit;
     }
 
+    $template->param(C4::Search::enabled_staff_search_views);
     $self->output_html( $template->output );
 }
 
