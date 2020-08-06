@@ -100,6 +100,8 @@ sub intranet_head {
 sub intranet_js {
     my ( $self ) = @_;
 
+    return q|| unless $self->retrieve_data('can_be_grouped');
+
     my $biblionumber = $self->{cgi}->param('biblionumber');
     return q|| unless $biblionumber;
     return sprintf q|
@@ -111,6 +113,9 @@ sub intranet_js {
 
 sub intranet_catalog_biblio_enhancements_toolbar_button {
     my ( $self ) = @_;
+
+    return unless $self->retrieve_data('can_be_grouped');
+
     my $template = $self->get_template({
         file => 'toolbar-button.tt'
     });
