@@ -99,8 +99,11 @@ sub intranet_head {
 sub intranet_js {
     my ( $self ) = @_;
 
-    return q|
-    |;
+    return sprintf q|
+        <script>
+            $('<li><a href="/cgi-bin/koha/plugins/run.pl?class=%s&method=catalogue&biblionumber=%s">New item from Presseplus</a></li>').insertAfter($("#newitem").parent());
+        </script>
+    |, $self->{metadata}->{class}, $self->{cgi}->param('biblionumber');
 }
 
 sub intranet_catalog_biblio_enhancements_toolbar_button {
