@@ -32,12 +32,12 @@
                             <input type="hidden" name="method" value="[% METHOD | html %]"/>
 
                             <label for="issn_ean">ISSN or EAN: </label>
-                            <input type="text" name="issn_ean" value="" />
+                            <input type="text" name="issn_ean" value="4190191702107" />
 
                             <br/>
 
                             <label for="release_code">Release code: </label>
-                            <input type="text" name="release_code" value="" />
+                            <input type="text" name="release_code" value="2019001" />
 
                             <br/>
 
