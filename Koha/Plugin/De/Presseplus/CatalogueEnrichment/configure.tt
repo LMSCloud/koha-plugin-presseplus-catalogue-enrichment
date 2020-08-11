@@ -50,9 +50,10 @@
                         No
                     </label>
                 <li>
+
                 <li>
                     <label for "default_itemtype">Default item type: </label>
-                    <select id="default_itemtype "name="default_itemtype">
+                    <select id="default_itemtype"name="default_itemtype">
                         [% FOR itemtype IN itemtypes %]
                             [% IF itemtype.itemtype == default_itemtype %]
                                 <option value="[% itemtype.itemtype %]" selected="selected">[% itemtype.translated_description %]</option>
@@ -62,6 +63,21 @@
                         [% END %]
                     </select>
                 </li>
+
+                <li>
+                    <label for "default_framework">Default MARC bibliographic framework: </label>
+                    <select id="default_framework "name="default_framework">
+                        <option value="">Default</option>
+                        [% FOR framework IN frameworks %]
+                            [% IF framework.frameworkcode == default_framework %]
+                                <option value="[% framework.frameworkcode %]" selected="selected">[% framework.frameworktext %]</option>
+                            [% ELSE %]
+                                <option value="[% framework.frameworkcode %]">[% framework.frameworktext %]</option>
+                            [% END %]
+                        [% END %]
+                    </select>
+                </li>
+
             </ol>
         </fieldset>
 

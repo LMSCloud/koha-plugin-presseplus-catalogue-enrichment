@@ -20,6 +20,7 @@ use base qw(Koha::Plugins::Base);
 use C4::Context;
 use C4::Auth;
 use C4::Search;        # enabled_staff_search_views
+use Koha::BiblioFrameworks;
 use Koha::Biblios;
 use Koha::Items;
 use Koha::ItemTypes;
@@ -134,11 +135,13 @@ sub configure {
         my $template = $self->get_template({ file => 'configure.tt' });
 
         $template->param(
-            apikey           => $self->retrieve_data('apikey'),
-            coversize        => $self->retrieve_data('coversize'),
-            can_be_grouped   => $self->retrieve_data('can_be_grouped'),
-            default_itemtype => $self->retrieve_data('default_itemtype'),
-            itemtypes        => scalar Koha::ItemTypes->search,
+            apikey            => $self->retrieve_data('apikey'),
+            coversize         => $self->retrieve_data('coversize'),
+            can_be_grouped    => $self->retrieve_data('can_be_grouped'),
+            default_itemtype  => $self->retrieve_data('default_itemtype'),
+            itemtypes         => scalar Koha::ItemTypes->search,
+            default_framework => $self->retrieve_data('default_framework'),
+            frameworks        => scalar Koha::BiblioFrameworks->search,
         );
 
         $self->output_html( $template->output() );
@@ -146,10 +149,11 @@ sub configure {
     else {
         $self->store_data(
             {
-                apikey           => scalar $cgi->param('apikey'),
-                coversize        => scalar $cgi->param('coversize'),
-                can_be_grouped   => scalar $cgi->param('can_be_grouped'),
-                default_itemtype => scalar $cgi->param('default_itemtype'),
+                apikey            => scalar $cgi->param('apikey'),
+                coversize         => scalar $cgi->param('coversize'),
+                can_be_grouped    => scalar $cgi->param('can_be_grouped'),
+                default_itemtype  => scalar $cgi->param('default_itemtype'),
+                default_framework => scalar $cgi->param('default_framework'),
             }
         );
         $self->go_home();
@@ -267,7 +271,8 @@ sub tool_step2 {
     $record->append_fields(
         MARC::Field->new( '942', '0', '0', 'c' => $default_itemtype ) );
 
-    my ( $biblionumber ) = C4::Biblio::AddBiblio($record, ''); # FIXME Maybe we want the framworkcode to be an option?
+    my $default_framework = $self->retrieve_data('default_framework') || '';
+    my ( $biblionumber ) = C4::Biblio::AddBiblio($record, $default_framework);
 
     my $logged_in_user = Koha::Patrons->find( C4::Context->userenv->{number} );
     Koha::Item->new(
