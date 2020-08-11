@@ -312,6 +312,7 @@ sub catalogue {
     if ( $cgi->param('submitted') ) {
 
         my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
+                                                # For grouped, should not we actually retrieve the issn/ean from the bib record? ean or isbn? config parameter?
         my $release_code = $cgi->param('release_code');
         # TODO
         # my $json = REST API call
