@@ -22,6 +22,7 @@ use C4::Auth;
 use C4::Search;        # enabled_staff_search_views
 use Koha::Biblios;
 use Koha::Items;
+use Koha::ItemTypes;
 use Koha::Patrons;
 use Koha::CoverImages;
 use Mojo::JSON qw(decode_json);;
@@ -133,9 +134,11 @@ sub configure {
         my $template = $self->get_template({ file => 'configure.tt' });
 
         $template->param(
-            apikey         => $self->retrieve_data('apikey'),
-            coversize      => $self->retrieve_data('coversize'),
-            can_be_grouped => $self->retrieve_data('can_be_grouped'),
+            apikey           => $self->retrieve_data('apikey'),
+            coversize        => $self->retrieve_data('coversize'),
+            can_be_grouped   => $self->retrieve_data('can_be_grouped'),
+            default_itemtype => $self->retrieve_data('default_itemtype'),
+            itemtypes        => scalar Koha::ItemTypes->search,
         );
 
         $self->output_html( $template->output() );
@@ -143,9 +146,10 @@ sub configure {
     else {
         $self->store_data(
             {
-                apikey         => scalar $cgi->param('apikey'),
-                coversize      => scalar $cgi->param('coversize'),
-                can_be_grouped => scalar $cgi->param('can_be_grouped'),
+                apikey           => scalar $cgi->param('apikey'),
+                coversize        => scalar $cgi->param('coversize'),
+                can_be_grouped   => scalar $cgi->param('can_be_grouped'),
+                default_itemtype => scalar $cgi->param('default_itemtype'),
             }
         );
         $self->go_home();
@@ -234,7 +238,7 @@ sub tool_step2 {
             }
         ]
     };
-    my $default_itemtype = 'BK'; # FIXME Must be configurable
+    my $default_itemtype = $self->retrieve_data('default_itemtype') || Koha::ItemTypes->search->new->itemtype;
     $struct->{evt} =~ s|^(\d{4}-\d{2}-\d{2}).*$|$1|; # FIXME other format needed?
     # 245$a = BRAVO
     #    $n = 2018017
@@ -340,7 +344,7 @@ sub catalogue {
                 }
             ]
         };
-        my $default_itemtype = 'BK'; # FIXME Must be configurable
+        my $default_itemtype = $self->retrieve_data('default_itemtype') || Koha::ItemTypes->search->new->itemtype;
         $struct->{evt} =~ s|^(\d{4}-\d{2}-\d{2}).*$|$1|; # FIXME other format needed?
         # 245$a = BRAVO
         #    $n = 2018017
