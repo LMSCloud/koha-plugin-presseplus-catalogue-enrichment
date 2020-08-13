@@ -19,6 +19,7 @@ use base qw(Koha::Plugins::Base);
 
 use C4::Context;
 use C4::Auth;
+use C4::Charset;
 use C4::Search;        # enabled_staff_search_views
 use Koha::BiblioFrameworks;
 use Koha::Biblios;
@@ -26,9 +27,12 @@ use Koha::Items;
 use Koha::ItemTypes;
 use Koha::Patrons;
 use Koha::CoverImages;
-use Mojo::JSON qw(decode_json);;
+#use Mojo::JSON qw(decode_json);
 use File::Temp qw(tempfile);
 use GD::Image;
+use LWP::UserAgent;
+use HTTP::Request;
+use JSON qw( decode_json );
 
 our $VERSION = "0.01";
 our $MINIMUM_VERSION = "20.06";
@@ -211,7 +215,6 @@ sub tool_step2 {
     my ( $self, $args ) = @_;
     my $cgi = $self->{'cgi'};
 
-    #apikey => $self->retrieve_data('apikey'),
     my $template = $self->get_template({ file => 'tool-step2.tt' });
 
     my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
@@ -220,34 +223,22 @@ sub tool_step2 {
     # my $json = REST API call
     # my $struct = from_json $json;
     # TODO handle errors
-    my $struct = {
-        "name"        => 'BRAVO',
-        "description" => "Größte Jugendzeitschrift",
-        "evt"         => "2018-08-01T00:00:00",
-        "releaseCode" => "2018017",
-        "contentList" => [
-            {
-                "headline" => "Reich durch Klicks: Traumjob Webstar! Hast du das Zeugdazu?",
-                "content" =>
-                  "+ Die besten Fame-Tricks von Dagi, Julien & Co."
-            },
-            {
-                "headline" => "Vergiss mich nicht",
-                "content" =>
-                  "Wie deine Ferienliebe etwas Besonderes wird..."
-            },
-            {
-                "headline" => "Was ist los mit Justin?",
-                "content"  => "Seine crazy Verwandlung"
-            }
-        ]
-    };
+    my $ua = LWP::UserAgent->new;
+    $issn_ean = '4190191702107'; $release_code = '2020009'; # FIXME RMME hardcoded
+    my $req = HTTP::Request->new(GET => sprintf 'https://service.presseplus.de/contentText/%s/%s', $issn_ean, $release_code);
+    #my apikey = $self->retrieve_data('apikey'); # FIXME do we need that finally?
+    #$req->header('ApiKey' => $apikey);
+    my $res = $ua->request($req);
+
+    use Data::Printer colored => 1; warn p $res;
+    die "what's happening here?" unless $res->is_success;
+
+    my $struct = decode_json( $res->content );
+
     my $default_itemtype = $self->retrieve_data('default_itemtype') || Koha::ItemTypes->search->new->itemtype;
     $struct->{evt} =~ s|^(\d{4}-\d{2}-\d{2}).*$|$1|; # FIXME other format needed?
-    # 245$a = BRAVO
-    #    $n = 2018017
-    #    $p = "Größte Jugendzeitschrift"
     my $record = MARC::Record->new;
+    C4::Charset::SetMarcUnicodeFlag( $record,  C4::Context->preference("marcflavour") );
     $record->append_fields(
         MARC::Field->new(
             '245', '0', '0',
@@ -286,10 +277,9 @@ sub tool_step2 {
         }
     )->store;
 
-    my ($fh, $fn ) = tempfile( SUFFIX => '.cover', UNLINK => 1 );
-    my $cmd = sprintf q{wget -O %s https://cover.presseplus.eu/%s/%s/%s}, $fn, $self->retrieve_data('coversize')||200, $issn_ean, $release_code;
-    my $r = qx{$cmd}; # FIXME handle error
-    my $srcimage = GD::Image->new($fh);
+    $req = HTTP::Request->new(GET => sprintf 'https://cover.presseplus.eu/%s/%s/%s', $self->retrieve_data('coversize') || 200, $issn_ean, $release_code);
+    $res = $ua->request($req);
+    my $srcimage = GD::Image->new($res->content); # FIXME handle error
     Koha::CoverImage->new({ biblionumber => $biblionumber, src_image => $srcimage })->store; # FIXME handle error
 
     $template->param(
