@@ -27,8 +27,6 @@ use Koha::Items;
 use Koha::ItemTypes;
 use Koha::Patrons;
 use Koha::CoverImages;
-#use Mojo::JSON qw(decode_json);
-use File::Temp qw(tempfile);
 use GD::Image;
 use LWP::UserAgent;
 use HTTP::Request;
@@ -219,68 +217,24 @@ sub tool_step2 {
 
     my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
     my $release_code = $cgi->param('release_code');
-    # TODO
-    # my $json = REST API call
-    # my $struct = from_json $json;
-    # TODO handle errors
-    my $ua = LWP::UserAgent->new;
-    $issn_ean = '4190191702107'; $release_code = '2020009'; # FIXME RMME hardcoded
-    my $req = HTTP::Request->new(GET => sprintf 'https://service.presseplus.de/contentText/%s/%s', $issn_ean, $release_code);
-    #my apikey = $self->retrieve_data('apikey'); # FIXME do we need that finally?
-    #$req->header('ApiKey' => $apikey);
-    my $res = $ua->request($req);
 
-    use Data::Printer colored => 1; warn p $res;
-    die "what's happening here?" unless $res->is_success;
+    $issn_ean = '4190191702107'; $release_code = '2020005'; # FIXME RMME hardcoded
 
-    my $struct = decode_json( $res->content );
-
-    my $default_itemtype = $self->retrieve_data('default_itemtype') || Koha::ItemTypes->search->new->itemtype;
-    $struct->{evt} =~ s|^(\d{4}-\d{2}-\d{2}).*$|$1|; # FIXME other format needed?
-    my $record = MARC::Record->new;
-    C4::Charset::SetMarcUnicodeFlag( $record,  C4::Context->preference("marcflavour") );
-    $record->append_fields(
-        MARC::Field->new(
-            '245', '0', '0',
-            'a' => $struct->{name},
-            'n' => $struct->{releaseCode},
-            'p' => $struct->{description},
-        )
-    );
-    $record->append_fields(
-        MARC::Field->new( '260', '0', '0', 'c' => $struct->{evt}, ) );
-    for my $toc (@{$struct->{contentList}}) {
-        $record->append_fields(
-            MARC::Field->new(
-                '505', '0', '',
-                # FIXME in a or t?
-                #'a' => sprintf ("%s - %s", $toc->{headline}, $toc->{content}),
-                't' => sprintf ("%s - %s", $toc->{headline}, $toc->{content}),
-            ) );    # FIXME How to display "headline - content"?
-    }
-
-    $record->append_fields(
-        MARC::Field->new( '942', '0', '0', 'c' => $default_itemtype ) );
-
-    my $default_framework = $self->retrieve_data('default_framework') || '';
-    my ( $biblionumber ) = C4::Biblio::AddBiblio($record, $default_framework);
-
-    my $logged_in_user = Koha::Patrons->find( C4::Context->userenv->{number} );
-    Koha::Item->new(
+    my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
+    my $biblionumber = $self->build_biblio(
         {
-            biblionumber  => $biblionumber,
-            barcode       => undef,                         # FIXME No barcode?
-            homebranch    => $logged_in_user->branchcode,
-            holdingbranch => $logged_in_user->branchcode,
-            itype         => $default_itemtype,
-            # FIXME notforloan status? Otherwise it's "available"
+            title            => $presseplus_info->{name},
+            number           => $presseplus_info->{releaseCode},
+            description      => $presseplus_info->{description},
+            publication_date => $presseplus_info->{evt},
+            table_of_content => $presseplus_info->{contentList}
         }
-    )->store;
+    );
 
-    $req = HTTP::Request->new(GET => sprintf 'https://cover.presseplus.eu/%s/%s/%s', $self->retrieve_data('coversize') || 200, $issn_ean, $release_code);
-    $res = $ua->request($req);
-    my $srcimage = GD::Image->new($res->content); # FIXME handle error
-    Koha::CoverImage->new({ biblionumber => $biblionumber, src_image => $srcimage })->store; # FIXME handle error
+    my $item = $self->build_item({biblionumber => $biblionumber});
+
+    my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
+    Koha::CoverImage->new({ biblionumber => $biblionumber, src_image => $image })->store; # FIXME handle error
 
     $template->param(
         biblio => Koha::Biblios->find($biblionumber),
@@ -313,62 +267,15 @@ sub catalogue {
         my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
                                                 # For grouped, should not we actually retrieve the issn/ean from the bib record? ean or isbn? config parameter?
         my $release_code = $cgi->param('release_code');
-        # TODO
-        # my $json = REST API call
-        # my $struct = from_json $json;
-        # TODO handle errors
-        my $struct = {
-            "name"        => 'BRAVO',
-            "description" => "Größte Jugendzeitschrift",
-            "evt"         => "2018-08-01T00:00:00", # FIXME Where to store this date for items?
-            "releaseCode" => "2018017",
-            "contentList" => [
-                {
-                    "headline" => "Reich durch Klicks: Traumjob Webstar! Hast du das Zeugdazu?",
-                    "content" =>
-                      "+ Die besten Fame-Tricks von Dagi, Julien & Co."
-                },
-                {
-                    "headline" => "Vergiss mich nicht",
-                    "content" =>
-                      "Wie deine Ferienliebe etwas Besonderes wird..."
-                },
-                {
-                    "headline" => "Was ist los mit Justin?",
-                    "content"  => "Seine crazy Verwandlung"
-                }
-            ]
-        };
-        my $default_itemtype = $self->retrieve_data('default_itemtype') || Koha::ItemTypes->search->new->itemtype;
-        $struct->{evt} =~ s|^(\d{4}-\d{2}-\d{2}).*$|$1|; # FIXME other format needed?
-        # 245$a = BRAVO
-        #    $n = 2018017
-        #    $p = "Größte Jugendzeitschrift"
 
-        my $logged_in_user = Koha::Patrons->find( C4::Context->userenv->{number} );
+        $issn_ean = '4190191702107'; $release_code = '2020005'; # FIXME RMME hardcoded
 
-        my @tocs;
-        for my $toc (@{$struct->{contentList}}) {
-            push @tocs, sprintf ("%s - %s", $toc->{headline}, $toc->{content}),
-        }
+        my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
 
-        my $item = Koha::Item->new(
-            {
-                biblionumber  => $biblionumber,
-                barcode       => undef,                         # FIXME No barcode?
-                homebranch    => $logged_in_user->branchcode,
-                holdingbranch => $logged_in_user->branchcode,
-                itype         => $default_itemtype,
-                itemnotes     => join "\n", @tocs,
-            # FIXME notforloan status? Otherwise it's "available"
-            }
-        )->store;
+        my $item = $self->build_item({ biblionumber => $biblionumber, table_of_content => $presseplus_info->{contentList} });
 
-        my ($fh, $fn ) = tempfile( SUFFIX => '.cover', UNLINK => 1 );
-        my $cmd = sprintf q{wget -O %s https://cover.presseplus.eu/%s/%s/%s}, $fn, $self->retrieve_data('coversize')||200, $issn_ean, $release_code;
-        my $r = qx{$cmd}; # FIXME handle error
-        my $srcimage = GD::Image->new($fh);
-        Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $srcimage })->store; # FIXME handle error
+        my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
+        Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $image })->store; # FIXME handle error
 
         $template->param(
             biblio => Koha::Biblios->find($biblionumber),
@@ -381,6 +288,124 @@ sub catalogue {
 
     $template->param(C4::Search::enabled_staff_search_views);
     $self->output_html( $template->output );
+}
+
+sub retrieve_cover_image {
+    my ( $self, $issn_ean, $release_code ) = @_;
+
+    my $req = HTTP::Request->new(
+        GET => sprintf 'https://cover.presseplus.eu/%s/%s/%s',
+        $self->retrieve_data('coversize') || 200, $issn_ean, $release_code
+    );
+    my $res = LWP::UserAgent->new->request($req);
+
+    unless ( $res->is_success ) {
+        use Data::Printer colored => 1; warn p $res;
+        die "what's happening here?"; # FIXME be nice with the enduser
+    }
+
+    return GD::Image->new( $res->content );    # FIXME handle error
+}
+
+sub retrieve_info {
+    my ( $self, $issn_ean, $release_code ) = @_;
+
+    my $req = HTTP::Request->new(GET => sprintf 'https://service.presseplus.de/contentText/%s/%s', $issn_ean, $release_code);
+    #my apikey = $self->retrieve_data('apikey'); # FIXME do we need that finally?
+    #$req->header('ApiKey' => $apikey);
+    my $res = LWP::UserAgent->new->request($req);
+
+    unless ( $res->is_success ) {
+        use Data::Printer colored => 1; warn p $res;
+        die "what's happening here?"; # FIXME be nice with the enduser
+    }
+
+    return decode_json( $res->content );
+}
+
+sub build_biblio {
+    my ( $self, $info ) = @_;
+
+    my $title            = $info->{title};
+    my $number           = $info->{number};
+    my $description      = $info->{description};
+    my $publication_date = $info->{publication_date};
+    my $table_of_content = $info->{table_of_content};
+
+
+    $publication_date =~ s|^(\d{4}-\d{2}-\d{2}).*$|$1|; # FIXME other format needed?
+
+    # 245$a = BRAVO
+    #    $n = 2018017
+    #    $p = "Größte Jugendzeitschrift"
+
+    my $record = MARC::Record->new;
+    C4::Charset::SetMarcUnicodeFlag( $record, C4::Context->preference("marcflavour") );
+
+    $record->append_fields(
+        MARC::Field->new(
+            '245', '0', '0',
+            'a' => $title,
+            'n' => $number,
+            'p' => $description,
+        )
+    );
+    $record->append_fields(
+        MARC::Field->new( '260', '0', '0', 'c' => $publication_date, ) );
+    for my $toc (@{$table_of_content}) {
+        $record->append_fields(
+            MARC::Field->new(
+                '505', '0', '',
+                # FIXME in a or t?
+                #'a' => sprintf ("%s - %s", $toc->{headline}, $toc->{content}),
+                't' => sprintf ("%s - %s", $toc->{headline}, $toc->{content}),
+            ) );    # FIXME How to display "headline - content"?
+    }
+
+    $record->append_fields(
+        MARC::Field->new( '942', '0', '0', 'c' => $self->default_itemtype ) );
+
+    my ( $biblionumber ) = C4::Biblio::AddBiblio($record, $self->default_framework);
+    return $biblionumber;
+}
+
+sub build_item {
+    my ( $self, $info ) = @_;
+
+    my $biblionumber = $info->{biblionumber};
+    my $table_of_content = $info->{table_of_content} || [];
+
+    my $logged_in_user = Koha::Patrons->find( C4::Context->userenv->{number} );
+
+    return Koha::Item->new(
+        {
+            biblionumber  => $biblionumber,
+            barcode       => undef,                         # FIXME No barcode?
+            homebranch    => $logged_in_user->branchcode,
+            holdingbranch => $logged_in_user->branchcode,
+            itype         => $self->default_itemtype,
+            (
+                @$table_of_content
+                ? (itemnotes => join "\n", map { sprintf "%s - %s", $_->{headline}, $_->{content}} @$table_of_content)
+                : ()
+            ),
+
+            # FIXME notforloan status? Otherwise it's "available"
+        }
+    )->store;
+}
+
+sub default_itemtype {
+    my ($self) = @_;
+
+    return $self->retrieve_data('default_itemtype')
+      || Koha::ItemTypes->search->next->itemtype;
+}
+
+sub default_framework {
+    my ($self) = @_;
+
+    return $self->retrieve_data('default_framework') || '';
 }
 
 1;
