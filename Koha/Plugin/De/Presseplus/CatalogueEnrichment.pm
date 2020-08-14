@@ -311,10 +311,10 @@ sub retrieve_toc_image {
     );
     my $res = LWP::UserAgent->new->request($req);
 
-    unless ( $res->is_success ) {
-        #        use Data::Printer colored => 1; warn p $res;
-        die "what's happening here?"; # FIXME be nice with the enduser
-    }
+    #unless ( $res->is_success ) { # FIXME this always return 404
+    #    #        use Data::Printer colored => 1; warn p $res;
+    #    die "what's happening here?"; # FIXME be nice with the enduser
+    #}
 
     return GD::Image->new( $res->content );    # FIXME handle error
 }
