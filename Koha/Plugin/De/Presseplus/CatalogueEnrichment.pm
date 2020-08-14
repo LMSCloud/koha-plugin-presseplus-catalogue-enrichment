@@ -449,4 +449,19 @@ sub default_framework {
     return $self->retrieve_data('default_framework') || '';
 }
 
+sub static_routes {
+    my ( $self, $args ) = @_;
+
+    my $spec_str = $self->mbf_read('staticapi.json');
+    my $spec     = decode_json($spec_str);
+
+    return $spec;
+}
+
+sub api_namespace {
+    my ($self) = @_;
+
+    return 'presseplus';
+}
+
 1;
