@@ -140,6 +140,7 @@ sub configure {
             apikey            => $self->retrieve_data('apikey'),
             coversize         => $self->retrieve_data('coversize'),
             can_be_grouped    => $self->retrieve_data('can_be_grouped'),
+            toc_image         => $self->retrieve_data('toc_image'),
             default_itemtype  => $self->retrieve_data('default_itemtype'),
             itemtypes         => scalar Koha::ItemTypes->search,
             default_framework => $self->retrieve_data('default_framework'),
@@ -154,6 +155,7 @@ sub configure {
                 apikey            => scalar $cgi->param('apikey'),
                 coversize         => scalar $cgi->param('coversize'),
                 can_be_grouped    => scalar $cgi->param('can_be_grouped'),
+                toc_image         => scalar $cgi->param('toc_image'),
                 default_itemtype  => scalar $cgi->param('default_itemtype'),
                 default_framework => scalar $cgi->param('default_framework'),
             }
@@ -236,6 +238,11 @@ sub tool_step2 {
     my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
     Koha::CoverImage->new({ biblionumber => $biblionumber, src_image => $image })->store; # FIXME handle error
 
+    if ( $self->retrieve_data('toc_image') ) {
+        my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
+        Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $toc_image })->store; # FIXME handle error
+    }
+
     $template->param(
         biblio => Koha::Biblios->find($biblionumber),
         plugin => $self,
@@ -277,6 +284,11 @@ sub catalogue {
         my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
         Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $image })->store; # FIXME handle error
 
+        if ( $self->retrieve_data('toc_image') ) {
+            my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
+            Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $toc_image })->store; # FIXME handle error
+        }
+
         $template->param(
             biblio => Koha::Biblios->find($biblionumber),
             plugin => $self,
@@ -288,6 +300,23 @@ sub catalogue {
 
     $template->param(C4::Search::enabled_staff_search_views);
     $self->output_html( $template->output );
+}
+
+sub retrieve_toc_image {
+    my ( $self, $issn_ean, $release_code ) = @_;
+
+    my $req = HTTP::Request->new(
+        GET => sprintf 'https://service.presseplus.de/content/%s/%s/%s',
+        $self->retrieve_data('coversize') || 200, $issn_ean, $release_code
+    );
+    my $res = LWP::UserAgent->new->request($req);
+
+    unless ( $res->is_success ) {
+        #        use Data::Printer colored => 1; warn p $res;
+        die "what's happening here?"; # FIXME be nice with the enduser
+    }
+
+    return GD::Image->new( $res->content );    # FIXME handle error
 }
 
 sub retrieve_cover_image {

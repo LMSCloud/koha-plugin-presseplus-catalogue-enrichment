@@ -32,6 +32,26 @@
                 <li>
 
                 <li>
+                    <label class="radio" for="toc_image">Download the image of the table of content:</label>
+                    <label class="radio" for="toc_image">
+                        [% IF toc_image %]
+                            <input type="radio" id="toc_image" name="toc_image" value="1" checked="checked" />
+                        [% ELSE %]
+                            <input type="radio" id="toc_image" name="toc_image" value="1" />
+                        [% END %]
+                        Yes
+                    </label>
+                    <label class="radio" for="no_toc_image">
+                        [% IF toc_image %]
+                            <input type="radio" id="no_toc_image" name="toc_image" value="0" />
+                        [% ELSE %]
+                            <input type="radio" id="no_toc_image" name="toc_image" value="0" checked="checked" />
+                        [% END %]
+                        No
+                    </label>
+                <li>
+
+                <li>
                     <label class="radio" for="can_be_grouped">Serial number can be attached to an existing bibliographic record: </label>
                     <label class="radio" for="can_be_grouped">
                         [% IF can_be_grouped %]
