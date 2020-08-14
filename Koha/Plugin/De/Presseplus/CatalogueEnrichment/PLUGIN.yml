@@ -1,9 +1,0 @@
-name: Catalogue enrichment plugin for Presseplus
-author: Jonathan Druart
-date_authored: 2020-07-23
-date_updated: 1900-01-01
-minimum_version: {MINIMUM_VERSION}
-maximum_version:
-version: {VERSION}
-description: This plugin retrieves some information from Presseplus to enrich a Koha catalogue
-module: Koha::Plugin::De::Presseplus::CatalogueEnrichment
