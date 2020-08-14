@@ -2,6 +2,7 @@
 [% INCLUDE 'doc-head-open.inc' %]
  <title>Koha: Presseplus Plugin: Configuration</title>
 [% INCLUDE 'doc-head-close.inc' %]
+<link rel="stylesheet" type="text/css" href="/api/v1/contrib/presseplus/static/css/presseplus.css" />
 </head>
 <body>
 [% INCLUDE 'header.inc' %]
@@ -22,18 +23,22 @@
 
             <ol>
                 <li>
-                    <label for="apikey">API keys: </label>
+                    <label for="apikey">API key: </label>
                     <input type="text" name="apikey" value="[% apikey | html %]" />
+                    <span class="hint">API key to access the Presseplus REST API.</span>
                 </li>
 
                 <li>
                     <label for="coversize">Cover size: </label>
                     <input type="text" name="coversize" value="[% coversize | html %]" />
-                <li>
+                    <span class="hint">Size of the cover images, in pixels (default is 200).</span>
+                </li>
+            </ol>
 
+            <ol class="radio">
                 <li>
                     <label class="radio" for="toc_image">Download the image of the table of content:</label>
-                    <label class="radio" for="toc_image">
+                    <label for="toc_image">
                         [% IF toc_image %]
                             <input type="radio" id="toc_image" name="toc_image" value="1" checked="checked" />
                         [% ELSE %]
@@ -41,7 +46,7 @@
                         [% END %]
                         Yes
                     </label>
-                    <label class="radio" for="no_toc_image">
+                    <label for="no_toc_image">
                         [% IF toc_image %]
                             <input type="radio" id="no_toc_image" name="toc_image" value="0" />
                         [% ELSE %]
@@ -49,11 +54,12 @@
                         [% END %]
                         No
                     </label>
-                <li>
+                    <span class="hint">In addition of the cover image, download a second image with the table of content of the serial number.</span>
+                </li>
 
                 <li>
                     <label class="radio" for="can_be_grouped">Serial number can be attached to an existing bibliographic record: </label>
-                    <label class="radio" for="can_be_grouped">
+                    <label for="can_be_grouped">
                         [% IF can_be_grouped %]
                             <input type="radio" id="can_be_grouped" name="can_be_grouped" value="1" checked="checked" />
                         [% ELSE %]
@@ -61,7 +67,7 @@
                         [% END %]
                         Yes
                     </label>
-                    <label class="radio" for="cannot_be_grouped">
+                    <label for="cannot_be_grouped">
                         [% IF can_be_grouped %]
                             <input type="radio" id="cannot_be_grouped" name="can_be_grouped" value="0" />
                         [% ELSE %]
@@ -69,11 +75,12 @@
                         [% END %]
                         No
                     </label>
-                <li>
+                    <span class="hint">If set to Yes, a new button 'New item from Presseplus' will appear on the bibliographic detail page.</span>
+                </li>
 
                 <li>
                     <label class="radio" for="attach_cover_to_biblio">Attach cover to the bibliographc record: </label>
-                    <label class="radio" for="attach_cover_to_biblio">
+                    <label for="attach_cover_to_biblio">
                         [% IF attach_cover_to_biblio %]
                             <input type="radio" id="attach_cover_to_biblio" name="attach_cover_to_biblio" value="1" checked="checked" />
                         [% ELSE %]
@@ -81,7 +88,7 @@
                         [% END %]
                         Yes
                     </label>
-                    <label class="radio" for="dont_attach_cover_to_biblio">
+                    <label for="dont_attach_cover_to_biblio">
                         [% IF attach_cover_to_biblio %]
                             <input type="radio" id="dont_attach_cover_to_biblio" name="attach_cover_to_biblio" value="0" />
                         [% ELSE %]
@@ -89,8 +96,11 @@
                         [% END %]
                         No
                     </label>
-                <li>
+                    <span class="hint">In case the serial numbers are attached to an existing bibliographic record, add the cover image to both the item and the biblio.</span>
+                </li>
+            </ol>
 
+            <ol>
                 <li>
                     <label for "default_itemtype">Default item type: </label>
                     <select id="default_itemtype"name="default_itemtype">
@@ -102,6 +112,7 @@
                             [% END %]
                         [% END %]
                     </select>
+                    <span class="hint">Default item type to use.</span>
                 </li>
 
                 <li>
@@ -116,6 +127,7 @@
                             [% END %]
                         [% END %]
                     </select>
+                    <span class="hint">Default bibliographic framework to use when a new bibliographic record is created.</span>
                 </li>
 
             </ol>
