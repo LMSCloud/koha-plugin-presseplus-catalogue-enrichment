@@ -72,6 +72,26 @@
                 <li>
 
                 <li>
+                    <label class="radio" for="attach_cover_to_biblio">Attach cover to the bibliographc record: </label>
+                    <label class="radio" for="attach_cover_to_biblio">
+                        [% IF attach_cover_to_biblio %]
+                            <input type="radio" id="attach_cover_to_biblio" name="attach_cover_to_biblio" value="1" checked="checked" />
+                        [% ELSE %]
+                            <input type="radio" id="attach_cover_to_biblio" name="attach_cover_to_biblio" value="1" />
+                        [% END %]
+                        Yes
+                    </label>
+                    <label class="radio" for="dont_attach_cover_to_biblio">
+                        [% IF attach_cover_to_biblio %]
+                            <input type="radio" id="dont_attach_cover_to_biblio" name="attach_cover_to_biblio" value="0" />
+                        [% ELSE %]
+                            <input type="radio" id="dont_attach_cover_to_biblio" name="attach_cover_to_biblio" value="0" checked="checked" />
+                        [% END %]
+                        No
+                    </label>
+                <li>
+
+                <li>
                     <label for "default_itemtype">Default item type: </label>
                     <select id="default_itemtype"name="default_itemtype">
                         [% FOR itemtype IN itemtypes %]

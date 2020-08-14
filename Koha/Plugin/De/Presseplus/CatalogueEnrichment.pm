@@ -145,6 +145,7 @@ sub configure {
             itemtypes         => scalar Koha::ItemTypes->search,
             default_framework => $self->retrieve_data('default_framework'),
             frameworks        => scalar Koha::BiblioFrameworks->search,
+            attach_cover_to_biblio => $self->retrieve_data('attach_cover_to_biblio'),
         );
 
         $self->output_html( $template->output() );
@@ -158,6 +159,7 @@ sub configure {
                 toc_image         => scalar $cgi->param('toc_image'),
                 default_itemtype  => scalar $cgi->param('default_itemtype'),
                 default_framework => scalar $cgi->param('default_framework'),
+                attach_cover_to_biblio => scalar $cgi->param('attach_cover_to_biblio'),
             }
         );
         $self->go_home();
@@ -282,7 +284,17 @@ sub catalogue {
         my $item = $self->build_item({ biblionumber => $biblionumber, table_of_content => $presseplus_info->{contentList} });
 
         my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
-        Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $image })->store; # FIXME handle error
+        Koha::CoverImage->new(
+            {
+                itemnumber => $item->itemnumber,
+                (
+                    $self->retrieve_data('attach_cover_to_biblio')
+                    ? ( biblionumber => $item->biblionumber )
+                    : ()
+                ),
+                src_image => $image
+            }
+        )->store;    # FIXME handle error
 
         if ( $self->retrieve_data('toc_image') ) {
             my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
