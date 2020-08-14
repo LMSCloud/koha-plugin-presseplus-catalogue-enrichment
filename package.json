@@ -1,7 +1,7 @@
 {
   "name": "koha-presseplus-catalogue-enrichment-plugin",
-  "version": "2.4.35",
-  "previous_version": "2.4.34",
+  "version": "0.0.1",
+  "previous_version": "0.0.0",
   "description": "Koha Catalogue enrichment plugin for Presseplus",
   "main": "index.js",
   "dependencies": {

@@ -32,7 +32,7 @@ use LWP::UserAgent;
 use HTTP::Request;
 use JSON qw( decode_json );
 
-our $VERSION = "0.01";
+our $VERSION = "{VERSION}";
 our $MINIMUM_VERSION = "20.06";
 
 our $metadata = {
