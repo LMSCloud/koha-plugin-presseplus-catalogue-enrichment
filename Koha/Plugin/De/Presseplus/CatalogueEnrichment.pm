@@ -296,6 +296,7 @@ sub catalogue {
             $template->param(errors => \@errors);
 
             $self->output_html( $template->output );
+            exit;
         };
 
         try {
