@@ -209,7 +209,7 @@ sub tool_step1 {
     my ( $self, $args ) = @_;
     my $cgi = $self->{'cgi'};
 
-    my $template = $self->get_template({ file => 'tool-step1.tt' });
+    my $template = $self->get_template({ file => 'catalogue-ungrouped.tt' });
 
     $self->output_html( $template->output() );
 }
@@ -218,35 +218,86 @@ sub tool_step2 {
     my ( $self, $args ) = @_;
     my $cgi = $self->{'cgi'};
 
-    my $template = $self->get_template({ file => 'tool-step2.tt' });
+    my $template = $self->get_template({ file => 'catalogue-ungrouped.tt' });
+
+    $template->param( plugin => $self );
 
     my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
     my $release_code = $cgi->param('release_code');
 
-    my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
-    my $biblionumber = $self->build_biblio(
-        {
-            title            => $presseplus_info->{name},
-            number           => $presseplus_info->{releaseCode},
-            description      => $presseplus_info->{description},
-            publication_date => $presseplus_info->{evt},
-            table_of_content => $presseplus_info->{contentList}
-        }
-    );
+    my ( @messages, @errors );
+    my $biblionumber;
+    try {
+        my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
 
-    my $item = $self->build_item({biblionumber => $biblionumber});
+        die "Not a valid issn/ean - release code couple\n"
+            if $presseplus_info->{description} eq ""
+                and $presseplus_info->{name} eq "";
 
-    my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
-    Koha::CoverImage->new({ biblionumber => $biblionumber, src_image => $image })->store; # FIXME handle error
+        $biblionumber = $self->build_biblio(
+            {
+                title            => $presseplus_info->{name},
+                number           => $presseplus_info->{releaseCode},
+                description      => $presseplus_info->{description},
+                publication_date => $presseplus_info->{evt},
+                table_of_content => $presseplus_info->{contentList}
+            }
+        );
+
+        my $item = $self->build_item({biblionumber => $biblionumber});
+
+        push @messages, {
+            code => 'success_on_retrieve_info',
+        };
+    } catch {
+        push @errors, {
+            code => 'error_on_retrieve_info',
+            error => $_,
+        };
+
+        $template->param(errors => \@errors);
+
+        $self->output_html( $template->output );
+        exit;
+    };
+
+    try {
+        my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
+        Koha::CoverImage->new(
+            {
+                biblionumber => $biblionumber,
+                src_image => $image,
+            }
+        )->store;
+        push @messages, {
+            code => 'success_on_retrieve_image',
+        };
+    } catch {
+        push @errors, {
+            code => 'error_on_retrieve_image',
+            error => $_,
+        };
+    };
 
     if ( $self->retrieve_data('toc_image') ) {
-        my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
-        Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $toc_image })->store; # FIXME handle error
+        try {
+            my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
+            Koha::CoverImage->new({ biblionumber => $biblionumber, src_image => $toc_image })->store;
+            push @messages, {
+                code => 'success_on_retrieve_toc_image',
+            };
+        } catch {
+            push @errors, {
+                code => 'error_on_retrieve_toc_image',
+                error => $_,
+            };
+        };
     }
 
     $template->param(
-        biblio => Koha::Biblios->find($biblionumber),
-        plugin => $self,
+        errors => \@errors,
+        messages => \@messages,
+        new_biblio => Koha::Biblios->find($biblionumber),
     );
 
     $self->output_html( $template->output() );
@@ -379,7 +430,7 @@ sub retrieve_cover_image {
 
     unless ( $res->is_success ) {
         use Data::Printer colored => 1; warn p $res;
-        die "what's happening here?"; # FIXME be nice with the enduser
+        die "what's happening here? Debug - please report to the author with steps to recreate"; # FIXME be nice with the enduser
     }
 
     return GD::Image->new( $res->content );    # FIXME handle error
@@ -395,7 +446,7 @@ sub retrieve_info {
 
     unless ( $res->is_success ) {
         use Data::Printer colored => 1; warn p $res;
-        die "what's happening here?"; # FIXME be nice with the enduser
+        die "what's happening here? Debug - please report to the author with steps to recreate"; # FIXME be nice with the enduser
     }
 
     return decode_json( $res->content );
