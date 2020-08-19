@@ -69,17 +69,17 @@
 
                         <fieldset class="rows">
                             <legend>Create a new item for <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber %]">[% biblio.title | html %]</a></legend>
-                            <form method="post">
+                            <form method="post" class="validated">
                                 <input type="hidden" name="class" value="[% CLASS | html %]"/>
                                 <input type="hidden" name="method" value="[% METHOD | html %]"/>
 
-                                <label for="issn_ean">ISSN or EAN: </label>
-                                <input type="text" name="issn_ean" value="" />
+                                <label for="issn_ean" class="required">ISSN or EAN: </label>
+                                <input type="text" name="issn_ean" value="" required="required" class="required" />
 
                                 <br/>
 
-                                <label for="release_code">Release code: </label>
-                                <input type="text" name="release_code" value="" />
+                                <label for="release_code" class="required">Release code: </label>
+                                <input type="text" name="release_code" value="" required="required" class="required" />
 
                                 <br/>
 
