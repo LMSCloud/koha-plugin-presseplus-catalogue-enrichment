@@ -283,6 +283,10 @@ sub catalogue {
         try {
             my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
 
+            die "Not a valid issn/ean - release code couple\n"
+                if $presseplus_info->{description} eq ""
+                    and $presseplus_info->{name} eq "";
+
             $item = $self->build_item({ biblionumber => $biblionumber, table_of_content => $presseplus_info->{contentList} });
             push @messages, {
                 code => 'success_on_retrieve_info',
