@@ -222,8 +222,6 @@ sub tool_step2 {
     my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
     my $release_code = $cgi->param('release_code');
 
-    $issn_ean = '4190191702107'; $release_code = '2020005'; # FIXME RMME hardcoded
-
     my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
     my $biblionumber = $self->build_biblio(
         {
@@ -276,8 +274,6 @@ sub catalogue {
         my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
                                                 # For grouped, should not we actually retrieve the issn/ean from the bib record? ean or isbn? config parameter?
         my $release_code = $cgi->param('release_code');
-
-        $issn_ean = '4190191702107'; $release_code = '2020005'; # FIXME RMME hardcoded
 
         my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
 
