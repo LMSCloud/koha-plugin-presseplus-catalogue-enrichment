@@ -3,3 +3,7 @@ fieldset.rows label
 {
      width: 15%;
 }
+
+fieldset.rows {
+    padding: 1em;
+}

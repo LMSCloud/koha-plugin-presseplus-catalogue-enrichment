@@ -31,6 +31,7 @@ use GD::Image;
 use LWP::UserAgent;
 use HTTP::Request;
 use JSON qw( decode_json );
+use Try::Tiny;
 
 our $VERSION = "{VERSION}";
 our $MINIMUM_VERSION = "20.06";
@@ -265,48 +266,83 @@ sub catalogue {
     die "no biblio for biblionumber=$biblionumber" unless $biblio; # FIXME handle that gracefully
 
     $template->param(
+        plugin => $self,
         biblio => $biblio,
         apikey => $self->retrieve_data('apikey'),
+        C4::Search::enabled_staff_search_views,
     );
 
+    my ( @messages, @errors );
     if ( $cgi->param('submitted') ) {
 
         my $issn_ean = $cgi->param('issn_ean'); # FIXME Should be in the response, is that issn or ean?
                                                 # For grouped, should not we actually retrieve the issn/ean from the bib record? ean or isbn? config parameter?
         my $release_code = $cgi->param('release_code');
 
-        my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
+        my $item;
+        try {
+            my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
 
-        my $item = $self->build_item({ biblionumber => $biblionumber, table_of_content => $presseplus_info->{contentList} });
+            $item = $self->build_item({ biblionumber => $biblionumber, table_of_content => $presseplus_info->{contentList} });
+            push @messages, {
+                code => 'success_on_retrieve_info',
+            };
+        } catch {
+            push @errors, {
+                code => 'error_on_retrieve_info',
+                error => $_,
+            };
 
-        my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
-        Koha::CoverImage->new(
-            {
-                itemnumber => $item->itemnumber,
-                (
-                    $self->retrieve_data('attach_cover_to_biblio')
-                    ? ( biblionumber => $item->biblionumber )
-                    : ()
-                ),
-                src_image => $image
-            }
-        )->store;    # FIXME handle error
+            $template->param(errors => \@errors);
+
+            $self->output_html( $template->output );
+        };
+
+        try {
+            my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
+            Koha::CoverImage->new(
+                {
+                    itemnumber => $item->itemnumber,
+                    (
+                        $self->retrieve_data('attach_cover_to_biblio')
+                        ? ( biblionumber => $item->biblionumber )
+                        : ()
+                    ),
+                    src_image => $image
+                }
+            )->store;
+            push @messages, {
+                code => 'success_on_retrieve_image',
+            };
+        } catch {
+            push @errors, {
+                code => 'error_on_retrieve_image',
+                error => $_,
+            };
+        };
 
         if ( $self->retrieve_data('toc_image') ) {
-            my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
-            Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $toc_image })->store; # FIXME handle error
+            try {
+                my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
+                Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $toc_image })->store;
+                push @messages, {
+                    code => 'success_on_retrieve_toc_image',
+                };
+            } catch {
+                push @errors, {
+                    code => 'error_on_retrieve_toc_image',
+                    error => $_,
+                };
+            };
         }
 
         $template->param(
-            biblio => Koha::Biblios->find($biblionumber),
-            plugin => $self,
+            error => \@errors,
+            messages => \@messages,
+            new_item => $item,
         );
-        #print $cgi->redirect("/cgi-bin/koha/catalogue/detail.pl?biblionumber=$biblionumber");
-        print $cgi->redirect(sprintf "/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=%s&itemnumber=%s#edititem", $item->biblionumber, $item->itemnumber);
-        exit;
     }
 
-    $template->param(C4::Search::enabled_staff_search_views);
     $self->output_html( $template->output );
 }
 
