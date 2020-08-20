@@ -128,6 +128,7 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
         biblionumber => scalar $self->{cgi}->param('biblionumber')
     );
     $template->output;
+    exit;
 }
 
 sub configure {
@@ -150,21 +151,21 @@ sub configure {
         );
 
         $self->output_html( $template->output() );
+        exit;
     }
-    else {
-        $self->store_data(
-            {
-                apikey            => scalar $cgi->param('apikey'),
-                coversize         => scalar $cgi->param('coversize'),
-                can_be_grouped    => scalar $cgi->param('can_be_grouped'),
-                toc_image         => scalar $cgi->param('toc_image'),
-                default_itemtype  => scalar $cgi->param('default_itemtype'),
-                default_framework => scalar $cgi->param('default_framework'),
-                attach_cover_to_biblio => scalar $cgi->param('attach_cover_to_biblio'),
-            }
-        );
-        $self->go_home();
-    }
+    $self->store_data(
+        {
+            apikey            => scalar $cgi->param('apikey'),
+            coversize         => scalar $cgi->param('coversize'),
+            can_be_grouped    => scalar $cgi->param('can_be_grouped'),
+            toc_image         => scalar $cgi->param('toc_image'),
+            default_itemtype  => scalar $cgi->param('default_itemtype'),
+            default_framework => scalar $cgi->param('default_framework'),
+            attach_cover_to_biblio => scalar $cgi->param('attach_cover_to_biblio'),
+        }
+    );
+    $self->go_home();
+    exit;
 }
 
 ## This is the 'install' method. Any database tables or other setup that should
@@ -212,6 +213,7 @@ sub tool_step1 {
     my $template = $self->get_template({ file => 'catalogue-ungrouped.tt' });
 
     $self->output_html( $template->output() );
+    exit;
 }
 
 sub tool_step2 {
@@ -259,6 +261,7 @@ sub tool_step2 {
 
         $self->output_html( $template->output );
         exit;
+        exit;
     };
 
     try {
@@ -301,6 +304,7 @@ sub tool_step2 {
     );
 
     $self->output_html( $template->output() );
+    exit;
 }
 
 sub catalogue {
@@ -400,6 +404,7 @@ sub catalogue {
     }
 
     $self->output_html( $template->output );
+    exit;
 }
 
 sub retrieve_toc_image {
