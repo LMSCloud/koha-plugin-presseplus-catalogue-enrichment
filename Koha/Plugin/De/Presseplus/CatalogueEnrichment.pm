@@ -128,7 +128,7 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
         biblionumber => scalar $self->{cgi}->param('biblionumber')
     );
     $template->output;
-    exit;
+    # Don't exit here!
 }
 
 sub configure {
