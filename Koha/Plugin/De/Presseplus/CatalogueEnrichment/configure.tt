@@ -106,9 +106,9 @@
                     <select id="default_itemtype"name="default_itemtype">
                         [% FOR itemtype IN itemtypes %]
                             [% IF itemtype.itemtype == default_itemtype %]
-                                <option value="[% itemtype.itemtype %]" selected="selected">[% itemtype.translated_description %]</option>
+                                <option value="[% itemtype.itemtype | html %]" selected="selected">[% itemtype.translated_description | html %]</option>
                             [% ELSE %]
-                                <option value="[% itemtype.itemtype %]">[% itemtype.translated_description %]</option>
+                                <option value="[% itemtype.itemtype | html %]">[% itemtype.translated_description | html %]</option>
                             [% END %]
                         [% END %]
                     </select>
@@ -121,9 +121,9 @@
                         <option value="">Default</option>
                         [% FOR framework IN frameworks %]
                             [% IF framework.frameworkcode == default_framework %]
-                                <option value="[% framework.frameworkcode %]" selected="selected">[% framework.frameworktext %]</option>
+                                <option value="[% framework.frameworkcode | html %]" selected="selected">[% framework.frameworktext | html %]</option>
                             [% ELSE %]
-                                <option value="[% framework.frameworkcode %]">[% framework.frameworktext %]</option>
+                                <option value="[% framework.frameworkcode | html %]">[% framework.frameworktext | html %]</option>
                             [% END %]
                         [% END %]
                     </select>

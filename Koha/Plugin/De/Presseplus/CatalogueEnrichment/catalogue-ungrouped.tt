@@ -28,12 +28,12 @@
                             [% FOREACH m IN errors  %]
                                 [% SWITCH m.code %]
                                 [% CASE 'error_on_retrieve_info' %]
-                                    Something wrong happened, the information have not been retrieved correctly: [% m.error %]
+                                    Something wrong happened, the information have not been retrieved correctly: [% m.error | html %]
                                 [% CASE 'error_on_retrieve_image' %]
                                     No cover image has been found.
                                 [% CASE 'error_on_retrieve_toc_image' %]
                                     No cover image for the table of content has been found.
-                                [% CASE %]Unkown error: [% m.code %]
+                                [% CASE %]Unkown error: [% m.code | html %]
                                 [% END %]
                             </div>
                         [% END %]

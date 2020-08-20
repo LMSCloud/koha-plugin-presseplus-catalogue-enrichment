@@ -13,7 +13,7 @@
         &rsaquo;
         <a href="/cgi-bin/koha/catalogue/search.pl">Catalog</a>
         &rsaquo;
-        <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber %]">[% biblio.title | html %]</a>
+        <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber | uri %]">[% biblio.title | html %]</a>
         &rsaquo;
         Presseplus plugin
         &rsaquo;
@@ -32,12 +32,12 @@
                                 [% FOREACH m IN errors  %]
                                     [% SWITCH m.code %]
                                     [% CASE 'error_on_retrieve_info' %]
-                                        Something wrong happened, the information have not been retrieved correctly: [% m.error %]
+                                        Something wrong happened, the information have not been retrieved correctly: [% m.error | html %]
                                     [% CASE 'error_on_retrieve_image' %]
                                         No cover image has been found.
                                     [% CASE 'error_on_retrieve_toc_image' %]
                                         No cover image for the table of content has been found.
-                                    [% CASE %]Unkown error: [% m.code %]
+                                    [% CASE %]Unkown error: [% m.code | html %]
                                     [% END %]
                                 </div>
                             [% END %]
@@ -68,7 +68,7 @@
                         [% END %]
 
                         <fieldset class="rows">
-                            <legend>Create a new item for <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber %]">[% biblio.title | html %]</a></legend>
+                            <legend>Create a new item for <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber | uri %]">[% biblio.title | html %]</a></legend>
                             <form method="post" class="validated">
                                 <input type="hidden" name="class" value="[% CLASS | html %]"/>
                                 <input type="hidden" name="method" value="[% METHOD | html %]"/>
@@ -83,7 +83,7 @@
 
                                 <br/>
 
-                                <input type="hidden" name="biblionumber" value="[% biblio.biblionumber%]" />
+                                <input type="hidden" name="biblionumber" value="[% biblio.biblionumber | html %]" />
                                 <input name="submitted" type="submit" value="Submit" />
                             </form>
                         </fieldset>

@@ -1,7 +1,6 @@
 <div class="btn-group">
-    <a class="btn btn-default" href="/cgi-bin/koha/plugins/run.pl?class=[% CLASS %]&method=catalogue&biblionumber=[% biblionumber %]">
+    <a class="btn btn-default" href="/cgi-bin/koha/plugins/run.pl?class=[% CLASS | html %]&method=catalogue&biblionumber=[% biblionumber | html %]">
       <i class="fa fa-book" aria-hidden="true"></i>
       Add new item from Presseplus
     </a>
 </div>
-
