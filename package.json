@@ -1,8 +1,8 @@
 {
-  "name": "koha-presseplus-catalogue-enrichment-plugin",
+  "name": "koha-plugin-presseplus-catalogue-enrichment",
   "version": "0.0.1",
   "previous_version": "0.0.0",
-  "description": "Koha Catalogue enrichment plugin for Presseplus",
+  "description": "Koha catalogue enrichment plugin for Presseplus",
   "main": "index.js",
   "dependencies": {
     "datetime": "0.0.3",
@@ -23,12 +23,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.com/Joubu/koha-presseplus-catalogue-enrichment-plugin.git"
+    "url": "git+https://gitlab.com/Joubu/koha-plugin-presseplus-catalogue-enrichment.git"
   },
   "author": "Jonathan Druart <jonathan.druart@gmail.com>",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://gitlab.com/Joubu/koha-presseplus-catalogue-enrichment-plugin/issues"
+    "url": "https://gitlab.com/Joubu/koha-plugin-presseplus-catalogue-enrichment/issues"
   },
-  "homepage": "https://gitlab.com/Joubu/koha-presseplus-catalogue-enrichment-plugin"
+  "homepage": "https://gitlab.com/Joubu/koha-plugin-presseplus-catalogue-enrichment"
 }
