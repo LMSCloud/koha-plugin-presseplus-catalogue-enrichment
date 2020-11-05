@@ -266,15 +266,21 @@ sub tool_step2 {
 
     try {
         my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
-        Koha::CoverImage->new(
-            {
-                biblionumber => $biblionumber,
-                src_image => $image,
-            }
-        )->store;
-        push @messages, {
-            code => 'success_on_retrieve_image',
-        };
+        if ( $image ) {
+            Koha::CoverImage->new(
+                {
+                    biblionumber => $biblionumber,
+                    src_image => $image,
+                }
+            )->store;
+            push @messages, {
+                code => 'success_on_retrieve_image',
+            };
+        } else {
+            push @messages, {
+                code => 'no_cover_image',
+            };
+        }
     } catch {
         push @errors, {
             code => 'error_on_retrieve_image',
@@ -285,10 +291,16 @@ sub tool_step2 {
     if ( $self->retrieve_data('toc_image') ) {
         try {
             my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
-            Koha::CoverImage->new({ biblionumber => $biblionumber, src_image => $toc_image })->store;
-            push @messages, {
-                code => 'success_on_retrieve_toc_image',
-            };
+            if ( $toc_image ) {
+                Koha::CoverImage->new({ biblionumber => $biblionumber, src_image => $toc_image })->store;
+                push @messages, {
+                    code => 'success_on_retrieve_toc_image',
+                };
+            } else {
+                push @messages, {
+                    code => 'no_toc_image',
+                };
+            }
         } catch {
             push @errors, {
                 code => 'error_on_retrieve_toc_image',
@@ -360,20 +372,26 @@ sub catalogue {
 
         try {
             my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
-            Koha::CoverImage->new(
-                {
-                    itemnumber => $item->itemnumber,
-                    (
-                        $self->retrieve_data('attach_cover_to_biblio')
-                        ? ( biblionumber => $item->biblionumber )
-                        : ()
-                    ),
-                    src_image => $image
-                }
-            )->store;
-            push @messages, {
-                code => 'success_on_retrieve_image',
-            };
+            if ( $image ) {
+                Koha::CoverImage->new(
+                    {
+                        itemnumber => $item->itemnumber,
+                        (
+                            $self->retrieve_data('attach_cover_to_biblio')
+                            ? ( biblionumber => $item->biblionumber )
+                            : ()
+                        ),
+                        src_image => $image
+                    }
+                )->store;
+                push @messages, {
+                    code => 'success_on_retrieve_image',
+                };
+            } else {
+                push @messages, {
+                    code => 'no_cover_image',
+                };
+            }
         } catch {
             push @errors, {
                 code => 'error_on_retrieve_image',
@@ -384,10 +402,16 @@ sub catalogue {
         if ( $self->retrieve_data('toc_image') ) {
             try {
                 my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
-                Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $toc_image })->store;
-                push @messages, {
-                    code => 'success_on_retrieve_toc_image',
-                };
+                if ( $toc_image ) {
+                    Koha::CoverImage->new({ itemnumber => $item->itemnumber, src_image => $toc_image })->store;
+                    push @messages, {
+                        code => 'success_on_retrieve_toc_image',
+                    };
+                } else {
+                    push @messages, {
+                        code => 'no_toc_image',
+                    };
+                }
             } catch {
                 push @errors, {
                     code => 'error_on_retrieve_toc_image',
@@ -411,17 +435,18 @@ sub retrieve_toc_image {
     my ( $self, $issn_ean, $release_code ) = @_;
 
     my $req = HTTP::Request->new(
-        GET => sprintf 'https://service.presseplus.de/content/%s/%s/%s',
+        GET => sprintf 'https://contents.presseplus.eu/%s/%s/%s',
         $self->retrieve_data('coversize') || 200, $issn_ean, $release_code
     );
     my $res = LWP::UserAgent->new->request($req);
 
-    #unless ( $res->is_success ) { # FIXME this always return 404
-    #    #        use Data::Printer colored => 1; warn p $res;
-    #    die "what's happening here?"; # FIXME be nice with the enduser
-    #}
+    return if $res->code == 404;
 
-    return GD::Image->new( $res->content );    # FIXME handle error
+    unless ( $res->is_success ) {
+        die sprintf "Cannot retrieve toc image: %s (%s)", $res->msg, $res->code;
+    }
+
+    return GD::Image->new( $res->content );
 }
 
 sub retrieve_cover_image {
@@ -433,12 +458,13 @@ sub retrieve_cover_image {
     );
     my $res = LWP::UserAgent->new->request($req);
 
+    return if $res->code == 404;
+
     unless ( $res->is_success ) {
-        use Data::Printer colored => 1; warn p $res;
-        die "what's happening here? Debug - please report to the author with steps to recreate"; # FIXME be nice with the enduser
+        die sprintf "Cannot retrieve toc image: %s (%s)", $res->msg, $res->code;
     }
 
-    return GD::Image->new( $res->content );    # FIXME handle error
+    return GD::Image->new( $res->content );
 }
 
 sub retrieve_info {

@@ -34,9 +34,9 @@
                                     [% CASE 'error_on_retrieve_info' %]
                                         Something wrong happened, the information have not been retrieved correctly: [% m.error | html %]
                                     [% CASE 'error_on_retrieve_image' %]
-                                        No cover image has been found.
+                                        Something wrong happened when retrieving the cover image.
                                     [% CASE 'error_on_retrieve_toc_image' %]
-                                        No cover image for the table of content has been found.
+                                        Something wrong happened when retrieving the cover table of content image.
                                     [% CASE %]Unkown error: [% m.code | html %]
                                     [% END %]
                                 </div>
@@ -49,14 +49,18 @@
                                 [% IF messages.size %]
                                     <ul>
                                     [% FOREACH m IN messages %]
-                                        <li style="list-style-type:circle;">
+                                        <li style="list-style-type:none;">
                                             [% SWITCH m.code %]
                                             [% CASE 'success_on_retrieve_info' %]
-                                                The information have been retrieved from Presseplus.
+                                                <i class="fa fa-fw fa-check"></i> The information have been retrieved from Presseplus.
                                             [% CASE 'success_on_retrieve_image' %]
-                                                One cover image has been found.
+                                                <i class="fa fa-fw fa-check"></i> One cover image has been found.
                                             [% CASE 'success_on_retrieve_toc_image' %]
-                                                One cover image for the table of content has been found.
+                                                <i class="fa fa-fw fa-check"></i> One cover image for the table of content has been found.
+                                            [% CASE 'no_toc_image' %]
+                                                No image for the table of content found.
+                                            [% CASE 'no_cover_image' %]
+                                                No cover image found.
                                             [% END %]
                                         </li>
                                     [% END %]
