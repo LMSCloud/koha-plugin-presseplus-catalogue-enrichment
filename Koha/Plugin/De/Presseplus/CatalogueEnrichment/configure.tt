@@ -22,11 +22,13 @@
             <legend>Configuration</legend>
 
             <ol>
+                <!--
                 <li>
                     <label for="apikey">API key: </label>
                     <input type="text" name="apikey" value="[% apikey | html %]" />
                     <span class="hint">API key to access the Presseplus REST API.</span>
                 </li>
+                -->
 
                 <li>
                     <label for="coversize">Cover size: </label>
