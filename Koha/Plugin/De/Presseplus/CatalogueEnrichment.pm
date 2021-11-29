@@ -77,10 +77,25 @@ sub opac_head {
     my ( $self ) = @_;
 
     return q|
-        <style>
-          body {
-          }
-        </style>
+<style>
+    .chocolat-wrapper.chocolat-visible {
+        z-index: 1042;
+        opacity: .9;
+    }
+    #pp-modal {
+        z-index: 1041;
+    }
+    #pp-modal .modal-dialog {
+        margin: 10% 20%;
+        max-width: none;
+    }
+    .pp-toc .contents {
+        width: 100%;
+    }
+    .pp-images {
+        text-align: center;
+    }
+</style>
     |;
 }
 
@@ -88,6 +103,50 @@ sub opac_js {
     my ( $self ) = @_;
 
     return q|
+<script>
+
+    if ( $("#opac-detail").size() ) { // We are on the opac-detail page
+
+        let biblio_title = $(".biblio-title").html();
+        let pp_modal = $('<div id="pp-modal" class="modal"><div class="modal-dialog" role="document"><div class="modal-content"><div class="modal-header"><h1>' + biblio_title + ' </h1><button type="button" class="closebtn" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"><div class="row"><div class="col-lg-8"><div class="pp-images"></div></div><div class="col-lg-4"><div class="pp-toc"></div></div></div><div class="modal-footer"><div class="pp-show_toc chocolat-image"><a href="" class="chocolat-image fr no-underline blue">Show Table of Contents Image</a></div></div></div></div></div>');
+
+        $(pp_modal).appendTo($('#opac-detail > #wrapper > .main'));
+
+        $(".bookcover").each(function(){
+            var coverimages_divs = $(this).find('.local-coverimg');
+            $(coverimages_divs[0]).find('img').on('click', function(e){
+                if ( $(this).parents("#catalogue_detail_biblio").length ) {
+                    var toc = $("#catalogue_detail_biblio .contents").clone();
+                    if ( !toc.length ) {
+                        return true;
+                    }
+                    $(".pp-toc").empty().append(toc);
+                } else {
+                    var toc = $(this).parents("tr").find("td[class='notes']").text();
+                    $(".pp-toc").empty().append(toc);
+                }
+
+                e.stopPropagation();
+                e.preventDefault();
+
+                var coverimages_divs = $(this).parents('.cover-slides').find('.local-coverimg');
+
+                var main_image_url = $(coverimages_divs[0]).find('a').attr('href');
+                var main_image = $("<div>", { class: 'chocolat-image', html: $("<a>", {href: main_image_url, html: $("<img>", {src: main_image_url } ) } ) } );
+                $(".pp-images").empty().append(main_image);
+                var toc_a = $(coverimages_divs[1]).find('a');
+                var show_toc = $(toc_a).clone();
+                $(show_toc).text(_("Show table of contents image"));
+                $(".pp-show_toc").empty().append($(show_toc).clone());
+
+                Chocolat(document.querySelectorAll('.chocolat-image a'))
+
+                $('#pp-modal').modal('show');
+                return false;
+            });
+        });
+    }
+</script>
     |;
 }
 
