@@ -436,7 +436,7 @@ sub retrieve_toc_image {
 
     my $req = HTTP::Request->new(
         GET => sprintf 'https://contents.presseplus.eu/%s/%s/%s',
-        $self->retrieve_data('coversize') || 200, $issn_ean, $release_code
+        $self->retrieve_data('coversize') || 'original', $issn_ean, $release_code
     );
     my $res = LWP::UserAgent->new->request($req);
 
@@ -454,7 +454,7 @@ sub retrieve_cover_image {
 
     my $req = HTTP::Request->new(
         GET => sprintf 'https://cover.presseplus.eu/%s/%s/%s',
-        $self->retrieve_data('coversize') || 200, $issn_ean, $release_code
+        $self->retrieve_data('coversize') || 'original', $issn_ean, $release_code
     );
     my $res = LWP::UserAgent->new->request($req);
 

@@ -33,7 +33,7 @@
                 <li>
                     <label for="coversize">Cover size: </label>
                     <input type="text" name="coversize" value="[% coversize | html %]" />
-                    <span class="hint">Size of the cover images, in pixels (default is 200).</span>
+                    <span class="hint">Size of the cover images, in pixels (default is 'original').</span>
                 </li>
             </ol>
 
