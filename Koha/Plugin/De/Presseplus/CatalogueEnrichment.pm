@@ -34,7 +34,7 @@ use JSON qw( decode_json );
 use Try::Tiny;
 
 our $VERSION = "{VERSION}";
-our $MINIMUM_VERSION = "20.06";
+our $MINIMUM_VERSION = "21.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
