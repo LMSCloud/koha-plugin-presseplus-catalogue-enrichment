@@ -27,6 +27,7 @@ use Koha::Items;
 use Koha::ItemTypes;
 use Koha::Patrons;
 use Koha::CoverImages;
+use Koha::DateUtils qw( dt_from_string );
 use GD::Image;
 use LWP::UserAgent;
 use HTTP::Request;
