@@ -520,7 +520,7 @@ sub retrieve_cover_image {
     return if $res->code == 404;
 
     unless ( $res->is_success ) {
-        die sprintf "Cannot retrieve toc image: %s (%s)", $res->msg, $res->code;
+        die sprintf "Cannot retrieve cover image: %s (%s)", $res->msg, $res->code;
     }
 
     return GD::Image->new( $res->content );
@@ -535,8 +535,7 @@ sub retrieve_info {
     my $res = LWP::UserAgent->new->request($req);
 
     unless ( $res->is_success ) {
-        use Data::Printer colored => 1; warn p $res;
-        die "what's happening here? Debug - please report to the author with steps to recreate"; # FIXME be nice with the enduser
+        die sprintf "Cannot retrieve info: %s (%s)", $res->msg, $res->code;
     }
 
     return decode_json( $res->content );
