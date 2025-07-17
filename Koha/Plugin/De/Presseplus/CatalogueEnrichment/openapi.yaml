@@ -1,0 +1,36 @@
+swagger: "2.0"
+paths:
+  /get_journal_list:
+    get:
+      summary: retrieve  alist of active Presseplus journal subscriptions
+      operationId: get_journal_list
+      parameters:
+        - name: search
+          in: query
+          required: false
+          type: string
+          maxLength: 100
+          description: search for a specific journal
+      produces: 
+        - application/json
+      security:
+        - APIKeyHeader: []
+      responses:
+        "200":
+          description: Successful Response
+          schema:
+            items:
+              type: object
+            type: array
+        "400":
+          description: Validation Error
+        "401":
+          description: Invalid API key
+        "404":
+          description: No API key found
+      tags:
+        - presseplus
+      x-koha-authorization:
+        permissions:
+          catalogue: "1"
+      x-mojo-to: De::Presseplus::CatalogueEnrichment::CatalogueEnrichmentController#getJournalList

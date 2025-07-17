@@ -1,5 +1,5 @@
 [% INCLUDE 'doc-head-open.inc' %]
-<title>Koha &rsaquo; Presseplus plugin &rsaquo; Enrich your catalogue</title>
+<title>Koha &rsaquo; Presseplus Plugin &rsaquo; Kataloganreicherung</title>
 [% INCLUDE 'doc-head-close.inc' %]
 <link rel="stylesheet" type="text/css" href="/api/v1/contrib/presseplus/static/css/presseplus.css" />
 </head>
@@ -11,13 +11,13 @@
     <div id="breadcrumbs">
         <a href="/cgi-bin/koha/mainpage.pl">Home</a>
         &rsaquo;
-        <a href="/cgi-bin/koha/catalogue/search.pl">Catalog</a>
+        <a href="/cgi-bin/koha/catalogue/search.pl">Katalog</a>
         &rsaquo;
         <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber | uri %]">[% biblio.title | html %]</a>
         &rsaquo;
-        Presseplus plugin
+        Presseplus Plugin
         &rsaquo;
-        Enrich your catalogue
+        Kataloganreicherung
     </div>
 
     <div class="main container-fluid">
@@ -26,71 +26,100 @@
                 <main>
                     <div class="row">
 
-                        <h1>Catalogue enrichment from Presseplus</h1>
+                        <h1>Kataloganreicherung mit Presseplus</h1>
                         [% IF errors.size %]
                             <div class="dialog alert">
                                 [% FOREACH m IN errors  %]
                                     [% SWITCH m.code %]
                                     [% CASE 'error_on_retrieve_info' %]
-                                        Something wrong happened, the information have not been retrieved correctly: [% m.error | html %]
+                                        Bei der Verarbeitung ist ein Fehler aufgetreten, die Heftinformationen konnten bei Presseplus nicht ermittelt werden: [% m.error | html %]
                                     [% CASE 'error_on_retrieve_image' %]
-                                        Something wrong happened when retrieving the cover image.
+                                        Beim Abholen des Titelbild ist ein Problem aufgetreten.
                                     [% CASE 'error_on_retrieve_toc_image' %]
-                                        Something wrong happened when retrieving the cover table of content image.
+                                        Beim Abholen der Bilddatei des Inhaltsverzeichnisses ist ein Problem aufgetreten.
                                     [% CASE %]Unkown error: [% m.code | html %]
                                     [% END %]
                                 </div>
                             [% END %]
                         [% END %]
 
-                        [% IF new_item %]
+                        [% IF (new_item || updated_item) %]
                             <fieldset class="rows">
-                                <h2>New item created!</h2>
+                                [% IF (new_item) %]
+                                <h2>Neues Heft-Exemplar [% new_item.enumchron %] erzeugt!</h2>
+                                [% ELSE %]
+                                <h2>Heft-Exemplar [% updated_item.enumchron %] aktualisiert!</h2>
+                                [% END %]
                                 [% IF messages.size %]
                                     <ul>
                                     [% FOREACH m IN messages %]
                                         <li style="list-style-type:none;">
                                             [% SWITCH m.code %]
                                             [% CASE 'success_on_retrieve_info' %]
-                                                <i class="fa fa-fw fa-check"></i> The information have been retrieved from Presseplus.
+                                                <i class="fa fa-fw fa-check"></i> Die Inhaltsangaben wurden von Presseplus abgeholt.
                                             [% CASE 'success_on_retrieve_image' %]
-                                                <i class="fa fa-fw fa-check"></i> One cover image has been found.
+                                                <i class="fa fa-fw fa-check"></i> Ein Titelbild wurde ergänzt.
                                             [% CASE 'success_on_retrieve_toc_image' %]
-                                                <i class="fa fa-fw fa-check"></i> One cover image for the table of content has been found.
+                                                <i class="fa fa-fw fa-check"></i> Die Bilddatei des Inhaltsverzeichnisses wurde ergänzt.
                                             [% CASE 'no_toc_image' %]
-                                                No image for the table of content found.
+                                                Es wurde keine Bilddatei des Inhaltsverzeichnisses gefunden.
                                             [% CASE 'no_cover_image' %]
-                                                No cover image found.
+                                                Es wurde kein Titelbild gefunden.
                                             [% END %]
                                         </li>
                                     [% END %]
                                     </ul>
                                 [% END %]
 
-                                <a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=[% biblio.biblionumber | uri %]&itemnumber=[% new_item.itemnumber | uri %]#edititem">Edit the new item</a>
+                                [% IF (new_item) %]
+                                <a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=[% biblio.biblionumber | uri %]&itemnumber=[% new_item.itemnumber | uri %]#edititem">Exemplardaten bearbeiten</a>
+                                [% ELSE %]
+                                <a href="/cgi-bin/koha/cataloguing/additem.pl?op=edititem&biblionumber=[% biblio.biblionumber | uri %]&itemnumber=[% updated_item.itemnumber | uri %]#edititem">Exemplardaten bearbeiten</a>
+                                [% END %]
                             </fieldset>
                         [% END %]
 
+                        [% IF !updated_item %]
                         <fieldset class="rows">
-                            <legend>Create a new item for <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber | uri %]">[% biblio.title | html %]</a></legend>
+                            [% IF (enrichItem) %]
+                            <legend>Anreichern des Exemplars [% IF (enrichItem && item) %]([% item.enumchron %]) [% ELSE %](Exemplarnummer: [% item.itemnumber %]) [% END %]von <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber | uri %]">[% biblio.title | html %]</a></legend>
+                            [% ELSE %]
+                            <legend>Erzeuge ein neues Exemplar für <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber | uri %]">[% biblio.title | html %]</a></legend>
+                            [% END %]
+                            <div class="journalNotFound error">Für den ausgewählten Titel konnte weder anhand EAN, ISSN noch über den Titel ein passendes Presseplus-Abonnement ermittelt werden. Bitte wählen Sie das passende Presseplus-Abonnment aus.</div>
+                            <div class="noJournalListAvailable error">Ihre aktuellen Presseplus-Abonnements konnten nicht ermittelt werden. Bitte geben Sie in der Presseplus-Plugin-Konfiguration den API-Zugriffschlüssel ihrer Bibliothek bei Presseplus an.</div>
                             <form method="post" class="validated">
                                 <input type="hidden" name="class" value="[% CLASS | html %]"/>
                                 <input type="hidden" name="method" value="[% METHOD | html %]"/>
+                                <input type="hidden" name="issn" value="" data-issn="[% biblioitem.issn | html %]" data-title="[% biblio.title | html %]"/>
+                                <input type="hidden" name="ean" value="" data-ean="[% biblioitem.ean | html %]"/>
 
-                                <label for="issn_ean" class="required">ISSN or EAN: </label>
-                                <input type="text" name="issn_ean" value="" required="required" class="required" />
-
-                                <br/>
-
-                                <label for="release_code" class="required">Release code: </label>
-                                <input type="text" name="release_code" value="" required="required" class="required" />
-
-                                <br/>
+                                <ol>
+                                    <li>
+                                        <label for="issn_ean" class="required">Zeitschrift (ISSN oder EAN): </label>
+                                        <select class="journal-selection" name="issn_ean" required="required" class="required"></select>
+                                    </li>
+                                    <li>
+                                        <label for="release_code" class="required">Jahrgang: </label>
+                                        <input class="journal-year" type="text" name="release_year" value="" required="required" class="required" />
+                                    </li>
+                                    <li>
+                                        <label for="release_code" class="required">Heft: </label>
+                                        <input class="journal-issue" type="text" name="release_issue" value="" required="required" class="required" />
+                                    </li>
+                                </ol>
 
                                 <input type="hidden" name="biblionumber" value="[% biblio.biblionumber | html %]" />
-                                <input name="submitted" type="submit" value="Submit" />
+                                [% IF (enrichItem) %]
+                                <input type="hidden" name="itemnumber" value="[% item.itemnumber | html %]" />
+                                <input name="submitted" type="submit" value="Anreichern" />
+                                [% ELSE %]
+                                <input name="submitted" type="submit" value="Anlegen" />
+                                [% END %]
                             </form>
                         </fieldset>
+                        [% END %]
+                        
                     </div>
                 </main>
             </div> <!-- /.col-sm-10.col-sm-push-2 -->
@@ -102,5 +131,120 @@
             </div> <!-- /.col-sm-2.col-sm-pull-10 -->
          </div> <!-- /.row -->
     </div>
+
+[% INCLUDE 'select2.inc' %]
+
+<script>
+$(document).ready(function(){
+    var issn = $('input[name="issn"]').data("issn");
+    var title = $('input[name="issn"]').data("title");
+    var ean = $('input[name="ean"]').data("ean");
+    var issuenumber = "[% issuenumber | html %]";
+    var issueyear = "[% issueyear | html %]";
+    var selectData = [];
+    var selectOptionValue;
+
+    if ( issueyear.length > 0 ) {
+        $('.journal-year').val(issueyear);
+    }
+    if ( issuenumber.length > 0 ) {
+        $('.journal-issue').val(issuenumber);
+    }
+
+    $.ajax({
+              url: "/api/v1/contrib/presseplus/get_journal_list",
+              error: function(xhr,status,error) {
+                  switchJournalSelectionInput();
+              }, 
+              success: function(data) {
+                     var selectOption;
+                     data.forEach((item, index) => {
+                        if ( ean && item.ean == ean ) {
+                            selectOption = index;
+                            console.log("Selected by ean " + ean + ", option " + index);
+                        }
+                    });
+                    if (! selectOption ) {
+                        data.forEach((item, index) => {
+                            if ( issn && item.issn == issn ) {
+                                selectOption = index;
+                                console.log("Selected by issn " + issn + ", option " + index);
+                            }
+                        });
+                    }
+                    if (! selectOption ) {
+                        data.forEach((item, index) => {
+                            if ( title && item.name.normalize("NFD").toLowerCase() == title.normalize("NFD").toLowerCase() ) {
+                                selectOption = index;
+                                console.log("Selected by title " + title + ", option " + index);
+                            }
+                        });
+                    }
+                    data.forEach((item, index) => {
+                        var name = item.name;
+                        if ( item.issn || item.ean ) {
+                            name += " (";
+                            if (item.issn) {
+                                name += "ISSN " + item.issn; 
+                                if (item.ean) {
+                                    name += ", ";
+                                }
+                            }
+                            if (item.ean) {
+                                name += "EAN " + item.ean;
+                            }
+                            name += ")";
+                        }
+                        name += " - aktuelles Heft: " + item.nextRelease;
+                        var useId = item.issn;
+                        if ( item.ean ) {
+                            useId = item.ean;
+                        }
+                        if ( useId && selectOption && selectOption == index ) {
+                            selectOptionValue = useId;
+                        }
+                        selectData.push(
+                                    { id : useId, 
+                                      text : name,
+                                      issue : item.nextReleaseIssue,
+                                      year : item.nextReleaseYear, 
+                                      issn : item.issn,
+                                      ean : item.ean
+                                    });
+                    });
+                    $('.journal-selection').select2({
+                        placeholder: 'ISSN oder EAN angeben',
+                        closeOnSelect: true,
+                        tags: true,
+                        width: '80%', // need to override the changed default,
+                        data: selectData
+                    });
+                    $('.journal-selection').on('change', function(e) {
+                        var data = $(this).select2('data');
+                        if ( data && data[0] ) {
+                            if ( issueyear.length == 0 ) {
+                                $('.journal-year').val(data[0].year);
+                            }
+                            if ( issuenumber.length == 0 ) {
+                                $('.journal-issue').val(data[0].issue);
+                            }
+                            $('input[name="issn"]').val(data[0].issn);
+                            $('input[name="ean"]').val(data[0].ean);
+                        }
+                    });
+                    if ( selectOptionValue ) {
+                        $(".journal-selection").val(selectOptionValue).trigger('change');
+                    } else {
+                        $('.journalNotFound').toggle();
+                    }
+              }
+    });
+});
+
+function switchJournalSelectionInput() {
+    $(".journal-selection").replaceWith('<input type="text" name="issn_ean" value="" required="required" class="required" />');
+    $(".noJournalListAvailable").toggle();
+}
+</script>
 
 [% INCLUDE 'intranet-bottom.inc' %]

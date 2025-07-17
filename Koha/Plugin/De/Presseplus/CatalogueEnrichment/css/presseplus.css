@@ -7,3 +7,12 @@ fieldset.rows label
 fieldset.rows {
     padding: 1em;
 }
+
+.journalNotFound {
+    display: none;
+}
+
+.noJournalListAvailable {
+    display: none;
+}
+
