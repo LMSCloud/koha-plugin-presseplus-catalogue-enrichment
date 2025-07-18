@@ -38,18 +38,18 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.0.6";
-our $MINIMUM_VERSION = "21.11";
+our $VERSION = "0.1.1";
+our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
-    author          => 'Jonathan Druart',
+    author          => 'Jonathan Druart & LMSCloud GmbH',
     date_authored   => '2020-07-23',
     date_updated    => "2021-12-10",
     minimum_version => $MINIMUM_VERSION,
     maximum_version => undef,
     version         => $VERSION,
-    description     => 'This plugin retrieves some information from Presseplus to enrich a Koha catalogue',
+    description     => 'Plugin zur Anreicherung von Katalog- und/oder Exemplarsätzen für Zeitschriftenhefte von Presseplus',
 };
 
 sub new {
