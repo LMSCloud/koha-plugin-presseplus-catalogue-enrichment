@@ -24,7 +24,7 @@
 
             <ol>
                 <li>
-                    <label for="apikey">API-Zugriffschlüssel: </label>
+                    <label for="apikey">API-Zugriffsschlüssel: </label>
                     <input type="text" name="apikey" value="[% apikey | html %]" />
                     <span class="hint">API-Zugriffschlüssel für die Presseplus REST API.</span>
                 </li>
@@ -85,7 +85,7 @@
                 <li>
                     <label class="radio" for="can_be_grouped">Zeitschriftenhefte als Exemplare zu bestehenden Titeldatensätzen ergänzen: </label>
                     <label for="can_be_grouped">
-                        [% IF can_be_grouped %]
+                        [% IF can_be_grouped || can_be_grouped == '' %]
                             <input type="radio" id="can_be_grouped" name="can_be_grouped" value="1" checked="checked" />
                         [% ELSE %]
                             <input type="radio" id="can_be_grouped" name="can_be_grouped" value="1" />
@@ -100,11 +100,11 @@
                         [% END %]
                         Nein
                     </label>
-                    <span class="hint">Wenn "Ja" ausgewählt wird, bietet die Detailansicht eines Titeldatensatzes die zusätzliche Aktion 'Neues Heft von Presseplus' an.</span>
+                    <span class="hint">Wenn "Ja" ausgewählt wird, bietet die Detailansicht eines Titeldatensatzes die zusätzliche Aktion 'Neues Heft von Presseplus' an, beim Exemplar steht “Anreichern mit Presseplus” als Option zur Verfügung.</span>
                 </li>
 
                 <li>
-                    <label class="radio" for="attach_cover_to_biblio">Titelbild zum zum Titelsatz ergänzen: </label>
+                    <label class="radio" for="attach_cover_to_biblio">Titelbild zum Titelsatz ergänzen: </label>
                     <label for="attach_cover_to_biblio">
                         [% IF attach_cover_to_biblio %]
                             <input type="radio" id="attach_cover_to_biblio" name="attach_cover_to_biblio" value="1" checked="checked" />
@@ -142,7 +142,7 @@
                         [% END %]
                         Nein
                     </label>
-                    <span class="hint">Werden Zeitschriftenhefte als Exemplare zum Titelsatz hinzugefügt, können bei der initialen Anzeige der Titelbildes des Heftes im Großfprmat die Inhaltsangabe aus der Exemplarnotiz mit angezeigt werden.</span>
+                    <span class="hint">Werden Zeitschriftenhefte als Exemplare zum Titelsatz hinzugefügt, kann bei der initialen Anzeige der Titelbildes des Heftes im Großformat die Inhaltsangabe aus der Exemplarnotiz mit angezeigt werden.</span>
                 </li>
             </ol>
 
