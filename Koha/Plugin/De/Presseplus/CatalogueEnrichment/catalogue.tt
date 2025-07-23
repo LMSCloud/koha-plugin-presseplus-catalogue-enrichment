@@ -157,8 +157,8 @@ $(document).ready(function(){
                   switchJournalSelectionInput();
               }, 
               success: function(data) {
-                     var selectOption;
-                     data.forEach((item, index) => {
+                    var selectOption;
+                    data.forEach((item, index) => {
                         if ( ean && item.ean == ean ) {
                             selectOption = index;
                             console.log("Selected by ean " + ean + ", option " + index);

@@ -38,7 +38,7 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.2";
+our $VERSION = "0.1.1";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
@@ -433,6 +433,13 @@ sub tool_step2 {
     my $issn = $cgi->param('issn') || '';
     my $ean = $cgi->param('ean') || '';
     
+    my $duplicateCheck = ($cgi->param('duplicateCheck') || 'yes');
+    if ( $duplicateCheck eq 'yes' ) {
+        $duplicateCheck = 1;
+    } else {
+        $duplicateCheck = 0;
+    }
+    
     my $release_code = $release_year . $release_issue;
     
     if ( $release_issue && $release_issue =~ /^\d{1,3}$/ ) {
@@ -441,6 +448,7 @@ sub tool_step2 {
 
     my ( @messages, @errors );
     my $biblionumber;
+    my $duplicateCheckResult;
     try {
         my $presseplus_info = $self->retrieve_info( $issn_ean, $release_code );
 
@@ -448,7 +456,7 @@ sub tool_step2 {
             if $presseplus_info->{description} eq ""
                 and $presseplus_info->{name} eq "";
 
-        $biblionumber = $self->build_biblio(
+        ($biblionumber,$duplicateCheckResult) = $self->build_biblio(
             {
                 title            => $presseplus_info->{name},
                 number           => $presseplus_info->{releaseCode},
@@ -459,14 +467,37 @@ sub tool_step2 {
                 ean              => $ean,
                 year             => $release_year,
                 issue            => $release_issue
-            }
+            },
+            $duplicateCheck
         );
 
-        my $item = $self->build_item({biblionumber => $biblionumber});
+		if ( $biblionumber ) {
+			my $item = $self->build_item({biblionumber => $biblionumber});
 
-        push @messages, {
-            code => 'success_on_retrieve_info',
-        };
+			push @messages, {
+				code => 'success_on_retrieve_info',
+			};
+		}
+		else {
+			if ( $duplicateCheckResult ) {
+                my @duplicateList = $duplicateCheckResult->as_list;
+				push @errors, {
+					code => 'duplicate_found',
+					data => \@duplicateList
+				};
+			}
+			
+			$template->param(
+				errors => \@errors,
+				messages => \@messages,
+				issn_ean => $cgi->param('issn_ean'),
+				release_year => $cgi->param('release_year'),
+				release_issue => $cgi->param('release_issue'),
+				issn => $cgi->param('issn'),
+                title => $cgi->param('title'),
+				ean => $cgi->param('ean')
+			);
+		}
     } catch {
         push @errors, {
             code => 'error_on_retrieve_info',
@@ -476,7 +507,6 @@ sub tool_step2 {
         $template->param(errors => \@errors);
 
         $self->output_html( $template->output );
-        exit;
         exit;
     };
 
@@ -547,16 +577,16 @@ sub enrichItem {
     my @messages;
     
     # The biblio we're working with
-    my $biblionumber = $self->{cgi}->param('biblionumber');
-    my $biblio = Koha::Biblios->find( $biblionumber );
-    my $biblioitem = Koha::Biblioitems->find( { biblionumber => $biblionumber } );
+    my $biblionumber = $cgi->param('biblionumber');
+    my $biblio       = Koha::Biblios->find( $biblionumber );
+    my $biblioitem   = Koha::Biblioitems->find( { biblionumber => $biblionumber } );
     die "no biblio for biblionumber=$biblionumber" unless $biblio; # FIXME handle that gracefully
     
-    my $itemnumber = $self->{cgi}->param('itemnumber');
-    my $item = Koha::Items->find($itemnumber);
+    my $itemnumber   = $cgi->param('itemnumber');
+    my $item         = Koha::Items->find($itemnumber);
     die "no item for itemnumber=$itemnumber" unless $item; # FIXME handle that gracefully
     
-    my $serial_item = Koha::Serial::Items->find($item->itemnumber);
+    my $serial_item  = Koha::Serial::Items->find( { itemnumber => $itemnumber } );
     my $serial;
     if ( $serial_item ) {
         $serial = Koha::Serials->find($serial_item->serialid);
@@ -565,19 +595,12 @@ sub enrichItem {
     my $issueyear = $self->{cgi}->param('release_year');
     my $issuenumber = $self->{cgi}->param('release_issue');
     
-    if ( !$issueyear || !$issuenumber || $issueyear !~ /^2[0-9]{3}$/ || $issuenumber !~ /^[0-9]{1,3}$/ ) {
+    if ( !$issueyear || !$issuenumber || ($issueyear && $issueyear !~ /^2[0-9]{3}$/) || ($issuenumber && $issuenumber !~ /^[0-9]{1,3}$/) ) {
         my $enumchron = $item->enumchron;
         my $dateaccessioned = $item->dateaccessioned;
 
-        # First try to get the year from a serial item if available
-        if ( !$issueyear && $serial ) {
-            if ( $serial->publisheddate && $serial->publisheddate =~ /^([0-9]{4})/ ) {
-                $issueyear = $1;
-            }
-            if ( !$issueyear && $serial->planneddate && $serial->planneddate =~ /^([0-9]{4})/ ) {
-                $issueyear = $1;
-            }
-        }
+        $enumchron =~ s/[012]?[0-9]\.[01]?[0-9]\.20[0-9]{2}//;
+        
         # Next, if not found, try to find a four digit year in the enumchron value of the item
         if ( !$issueyear && $enumchron =~ /(20[0-9]{2})/ ) {
             $issueyear = $1;
@@ -587,6 +610,17 @@ sub enrichItem {
         if ( !$issueyear && $dateaccessioned =~ /^([0-9]{4})/  ) {
             $issueyear = $1;
         }
+        
+        # First try to get the year from a serial item if available
+        if ( !$issueyear && $serial ) {
+            if ( $serial->publisheddate && $serial->publisheddate =~ /^([0-9]{4})/ ) {
+                $issueyear = $1;
+            }
+            if ( !$issueyear && $serial->planneddate && $serial->planneddate =~ /^([0-9]{4})/ ) {
+                $issueyear = $1;
+            }
+        }
+        
         # If not found, try to find a two digit year in the enumchron value
         if ( !$issueyear && $enumchron =~  /([123456][0-9])/ ) {
             $issueyear = $1;
@@ -627,7 +661,7 @@ sub enrichItem {
         my $presseplus_info;
         my $issn_ean;
         
-        try {
+       try {
             if ( $ean ) {
                 $presseplus_info = $self->retrieve_info( $ean, $release_code );
                 $issn_ean = $ean;
@@ -636,7 +670,7 @@ sub enrichItem {
                 $presseplus_info = $self->retrieve_info( $issn, $release_code );
                 $issn_ean = $issn;
             }
-            die "Keine gültige ISSN/EAN - Release Code Kombination für Presseplus. Die Angaben konnten bei Presseplus nicht ermitteln werden.\n"
+            die "Keine gültige IISSN/EAN oder Heftnummer für die Presseplus-Abfrage. Die Angaben konnten bei Presseplus nicht ermitteln werden.\n"
                 if $presseplus_info->{description} eq "" and $presseplus_info->{name} eq "";
 
             push @messages, {
@@ -647,21 +681,18 @@ sub enrichItem {
                 code => 'error_on_retrieve_info',
                 error => $_,
             };
-
-            $template->param(errors => \@errors);
-            exit;
         };
         
         
         if ( !$presseplus_info || ($presseplus_info->{description} eq "" and $presseplus_info->{name} eq "") ) {
             push @errors, {
                 code => 'error_on_retrieve_info',
-                error => "Keine gültige ISSN/EAN - Release Code Kombination für Presseplus. Die Angaben konnten bei Presseplus nicht ermitteln werden.\n",
+                error => "Keine gültige ISSN/EAN oder Heftnummer für die Presseplus-Abfrage. Die Angaben konnten bei Presseplus nicht ermitteln werden.\n",
             };
 
             $template->param(errors => \@errors);
         } else {
-            
+
             my $logged_in_user = Koha::Patrons->find( C4::Context->userenv->{number} );
             
             my $upd_issuenumber;
@@ -1049,7 +1080,7 @@ sub get_journal_list {
 }
 
 sub build_biblio {
-    my ( $self, $info ) = @_;
+    my ( $self, $info, $doDuplicateCheck ) = @_;
 
     my $title            = $info->{title};
     my $number           = $info->{number};
@@ -1087,13 +1118,26 @@ sub build_biblio {
             MARC::Field->new('024', '3', ' ', 'a' => $ean)
         );
     }
+    
+    my $searchValues = {};
+    my @fieldValues;
+    
+    if ( $title ) {
+		$searchValues->{title} = $title;
+		push @fieldValues, 'a' => $title;
+	}
+	if ( $number ) {
+		$searchValues->{part_number} = $number;
+		push @fieldValues, 'n' => $number;
+	}
+	if ( $description ) {
+		$searchValues->{part_name} = $description;
+		push @fieldValues, 'p' => $description;
+	}
 
     $record->append_fields(
         MARC::Field->new(
-            '245', '0', '0',
-            'a' => $title,
-            'n' => $number,
-            'p' => $description,
+            '245', '0', '0', @fieldValues
         )
     );
     
@@ -1118,8 +1162,15 @@ sub build_biblio {
     $record->append_fields(
         MARC::Field->new( '942', '0', '0', 'c' => $self->default_itemtype ) );
 
+	if ( $doDuplicateCheck ) {
+		my $duplicateCheckResult = Koha::Biblios->search( $searchValues );
+		
+		if ( $duplicateCheckResult->count ) {
+			return (undef,$duplicateCheckResult);
+		}
+	}
     my ( $biblionumber ) = C4::Biblio::AddBiblio($record, $self->default_framework);
-    return $biblionumber;
+    return ($biblionumber, undef);
 }
 
 sub build_item {

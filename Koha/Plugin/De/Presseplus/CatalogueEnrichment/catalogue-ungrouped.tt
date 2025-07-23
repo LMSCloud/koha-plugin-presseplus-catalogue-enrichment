@@ -33,6 +33,24 @@
                                     Beim Abholen des Titelbild ist ein Problem aufgetreten.
                                 [% CASE 'error_on_retrieve_toc_image' %]
                                     Beim Abholen der Bilddatei des Inhaltsverzeichnisses ist ein Problem aufgetreten.
+                                [% CASE 'duplicate_found' %]
+                                    Das Heft wurde bereits als Katalogtitel angelegt:<br>
+                                    [% FOREACH bib IN m.data  %]
+                                    <div class="duplicateTitel"><a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% bib.biblionumber | uri %]">[% bib.title | html %][% IF (bib.part_number) %] : [% bib.part_number | html%][% END %][% IF (bib.part_name) %]: [% bib.part_name | html%][% END %]</a></div>
+                                    [% END %]
+                                    <br>Soll das Heft dennoch angelegt werden?<br><br>
+                                    <form id="confirmDuplicate" method="post">
+                                        <input type="hidden" name="class" value="[% CLASS | html %]"/>
+                                        <input type="hidden" name="method" value="[% METHOD | html %]"/>
+                                        <input type="hidden" name="issn" value="[% issn | html %]"/>
+                                        <input type="hidden" name="ean" value="[% ean | html %]"/>
+                                        <input type="hidden" name="title" value="[% title | html %]"/>
+                                        <input type="hidden" name="issn_ean" value="[% issn_ean | html %]"/>
+                                        <input type="hidden" name="release_year" value="[% release_year | html %]"/>
+                                        <input type="hidden" name="release_issue" value="[% release_issue | html %]"/>
+                                        <input type="hidden" name="duplicateCheck" value="no"/>
+                                        <input name="submitted" type="submit" value="Trotzdem anlegen" />
+                                    </form>
                                 [% CASE %]Unkown error: [% m.code | html %]
                                 [% END %]
                             </div>
@@ -72,11 +90,12 @@
                         <div class="journalNotFound error">Für den ausgewählten Titel konnte weder anhand EAN, ISSN noch über den Titel ein passendes Presseplus-Abonnement ermittelt werden. Bitte wählen Sie das passende Presseplus-Abonnment aus.</div>
                         <div class="noJournalListAvailable error">Ihre aktuellen Presseplus-Abonnements konnten nicht ermittelt werden. Bitte geben Sie in der Presseplus-Plugin-Konfiguration den API-Zugriffschlüssel ihrer Bibliothek bei Presseplus an.</div>
 
-                        <form method="post" class="validated">
+                        <form id="issueNew" method="post" class="validated">
                             <input type="hidden" name="class" value="[% CLASS | html %]"/>
                             <input type="hidden" name="method" value="[% METHOD | html %]"/>
-                            <input type="hidden" name="issn" value=""/>
-                            <input type="hidden" name="ean" value=""/>
+                            <input type="hidden" name="issn" value="[% issn | html %]"/>
+                            <input type="hidden" name="ean" value="[% ean | html %]"/>
+                            <input type="hidden" name="title" value="[% title | html %]"/>
                             
                             <ol>
                                 <li>
@@ -85,11 +104,11 @@
                                 </li>
                                 <li>
                                     <label for="release_code" class="required">Jahrgang: </label>
-                                    <input class="journal-year" type="text" name="release_year" value="" required="required" class="required" />
+                                    <input class="journal-year" type="text" name="release_year" value="[% release_year | html %]" required="required" class="required" />
                                 </li>
                                 <li>
                                     <label for="release_code" class="required">Heft: </label>
-                                    <input class="journal-issue" type="text" name="release_issue" value="" required="required" class="required" />
+                                    <input class="journal-issue" type="text" name="release_issue" value="[% release_issue | html %]" required="required" class="required" />
                                 </li>
                             </ol>
 
@@ -105,9 +124,17 @@
 [% INCLUDE 'select2.inc' %]
 
 <script>
+var isInitialized = 0;
+
 $(document).ready(function(){
     var selectData = [];
     var selectOptionValue;
+    
+    var issn = $('#issueNew input[name="issn"]').val();
+    var title = $('#issueNew input[name="title"]').val();
+    var ean = $('#issueNew input[name="ean"]').val();
+    var issuenumber = "[% release_issue | html %]";
+    var issueyear = "[% release_year | html %]";
     
     $.ajax({
               url: "/api/v1/contrib/presseplus/get_journal_list",
@@ -115,6 +142,35 @@ $(document).ready(function(){
                   switchJournalSelectionInput();
               }, 
               success: function(data) {
+					var selectOption;
+					if ( isInitialized == 0 ) {
+						data.forEach((item, index) => {
+							if ( ean && item.ean == ean ) {
+								selectOption = index;
+								console.log("Selected by ean " + ean + ", option " + index);
+							}
+						});
+						if (! selectOption ) {
+							data.forEach((item, index) => {
+								if ( issn && item.issn == issn ) {
+									selectOption = index;
+									console.log("Selected by issn " + issn + ", option " + index);
+								}
+							});
+						}
+						if (! selectOption ) {
+							data.forEach((item, index) => {
+								if ( title && item.name.normalize("NFD").toLowerCase() == title.normalize("NFD").toLowerCase() ) {
+									selectOption = index;
+									console.log("Selected by title " + title + ", option " + index);
+								}
+							});
+						}
+                        if (! selectOption ) {
+                            selectOption = 0;
+                        }
+						isInitialized = 1;
+					}
                     data.forEach((item, index) => {
                         var name = item.name;
                         if ( item.issn || item.ean ) {
@@ -135,13 +191,17 @@ $(document).ready(function(){
                         if ( item.ean ) {
                             useId = item.ean;
                         }
+                        if ( useId && selectOption >= 0 && selectOption == index ) {
+                            selectOptionValue = useId;
+                        }
                         selectData.push(
                                     { id : useId, 
                                       text : name,
                                       issue : item.nextReleaseIssue,
                                       year : item.nextReleaseYear, 
                                       issn : item.issn,
-                                      ean : item.ean
+                                      ean : item.ean,
+                                      title : item.name
                                     });
                     });
                     $('.journal-selection').select2({
@@ -154,12 +214,20 @@ $(document).ready(function(){
                     $('.journal-selection').on('change', function(e) {
                         var data = $(this).select2('data');
                         if ( data && data[0] ) {
-                            $('.journal-year').val(data[0].year);
-                            $('.journal-issue').val(data[0].issue);
-                            $('input[name="issn"]').val(data[0].issn);
-                            $('input[name="ean"]').val(data[0].ean);
+                            if ( issueyear.length == 0 || isInitialized == 1 ) {
+                                $('.journal-year').val(data[0].year);
+                            }
+                            if ( issuenumber.length == 0 || isInitialized == 1 ) {
+                                $('.journal-issue').val(data[0].issue);
+                            }
+                            $('#issueNew input[name="issn"]').val(data[0].issn);
+                            $('#issueNew input[name="ean"]').val(data[0].ean);
+                            $('#issueNew input[name="title"]').val(data[0].title);
                         }
                     });
+                    if ( selectOptionValue ) {
+                        $(".journal-selection").val(selectOptionValue).trigger('change');
+                    }
               }
     });
 });
