@@ -53,8 +53,8 @@
                                     </form>
                                 [% CASE %]Unkown error: [% m.code | html %]
                                 [% END %]
-                            </div>
-                        [% END %]
+                            [% END %]
+                        </div>
                     [% END %]
 
                     [% IF new_biblio %]

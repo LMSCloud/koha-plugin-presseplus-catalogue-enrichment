@@ -670,7 +670,7 @@ sub enrichItem {
                 $presseplus_info = $self->retrieve_info( $issn, $release_code );
                 $issn_ean = $issn;
             }
-            die "Keine gültige IISSN/EAN oder Heftnummer für die Presseplus-Abfrage. Die Angaben konnten bei Presseplus nicht ermitteln werden.\n"
+            die "Keine gültige ISSN/EAN oder Heftnummer für die Presseplus-Abfrage. Die Angaben konnten bei Presseplus nicht ermitteln werden.\n"
                 if $presseplus_info->{description} eq "" and $presseplus_info->{name} eq "";
 
             push @messages, {
@@ -684,14 +684,8 @@ sub enrichItem {
         };
         
         
-        if ( !$presseplus_info || ($presseplus_info->{description} eq "" and $presseplus_info->{name} eq "") ) {
-            push @errors, {
-                code => 'error_on_retrieve_info',
-                error => "Keine gültige ISSN/EAN oder Heftnummer für die Presseplus-Abfrage. Die Angaben konnten bei Presseplus nicht ermitteln werden.\n",
-            };
-
-            $template->param(errors => \@errors);
-        } else {
+        if ( $presseplus_info && $presseplus_info->{description} ne "" and $presseplus_info->{name} ne "" ) {
+        {
 
             my $logged_in_user = Koha::Patrons->find( C4::Context->userenv->{number} );
             

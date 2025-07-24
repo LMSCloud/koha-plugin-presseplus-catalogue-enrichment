@@ -39,8 +39,8 @@
                                         Beim Abholen der Bilddatei des Inhaltsverzeichnisses ist ein Problem aufgetreten.
                                     [% CASE %]Unkown error: [% m.code | html %]
                                     [% END %]
-                                </div>
-                            [% END %]
+                                [% END %]
+                            </div>
                         [% END %]
 
                         [% IF (new_item || updated_item) %]
