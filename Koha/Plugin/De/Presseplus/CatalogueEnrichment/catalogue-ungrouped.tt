@@ -28,7 +28,7 @@
                             [% FOREACH m IN errors  %]
                                 [% SWITCH m.code %]
                                 [% CASE 'error_on_retrieve_info' %]
-                                    Bei der Verarbeitung ist ein Fehler aufgetreten, die Heftinformationen konnten bei Presseplus nicht ermittelt werden: [% m.error | html %]
+                                    Bei der Verarbeitung ist ein Fehler aufgetreten.<br>Die Heftinformationen konnten bei Presseplus nicht ermittelt werden: [% m.error | html %]
                                 [% CASE 'error_on_retrieve_image' %]
                                     Beim Abholen des Titelbild ist ein Problem aufgetreten.
                                 [% CASE 'error_on_retrieve_toc_image' %]

@@ -38,7 +38,7 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.6";
+our $VERSION = "0.1.7";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
@@ -671,7 +671,7 @@ sub enrichItem {
                 $issn_ean = $issn;
             }
             die "Keine gültige ISSN/EAN oder Heftnummer für die Presseplus-Abfrage. Die Angaben konnten bei Presseplus nicht ermitteln werden.\n"
-                if $presseplus_info->{description} eq "" and $presseplus_info->{name} eq "";
+                if ( !$presseplus_info || (!$presseplus_info->{description} and !$presseplus_info->{name}) );
 
             push @messages, {
                 code => 'success_on_retrieve_info',
@@ -684,7 +684,7 @@ sub enrichItem {
         };
         
         
-        if ( $presseplus_info && $presseplus_info->{description} ne "" and $presseplus_info->{name} ne "" )
+        if ( $presseplus_info && ($presseplus_info->{description} or $presseplus_info->{name}) )
         {
 
             my $logged_in_user = Koha::Patrons->find( C4::Context->userenv->{number} );
@@ -720,7 +720,7 @@ sub enrichItem {
                 $item->coded_location_qualifier($self->default_dbs_group);
                 $changed++;
             }
-            if ( !($item->enumchron) ) {
+            if ( !($item->enumchron) && $upd_issuenumber ) {
                 $item->enumchron($upd_issuenumber);
                 $changed++;
             }
@@ -786,12 +786,19 @@ sub enrichItem {
             }
 
             $template->param(
-                error => \@errors,
-                messages => \@messages,
                 updated_item => $item,
             );
         }
+    } else {
+        push @errors, {
+            code => 'error_on_retrieve_info',
+            error => "Keine gültige ISSN/EAN oder Heftnummer für die Presseplus-Abfrage. Die Angaben konnten bei Presseplus nicht ermitteln werden.\n",
+        };
     }
+    $template->param(
+		messages => \@messages,
+		errors => \@errors
+	);
 
     $self->output_html( $template->output );
     exit;
