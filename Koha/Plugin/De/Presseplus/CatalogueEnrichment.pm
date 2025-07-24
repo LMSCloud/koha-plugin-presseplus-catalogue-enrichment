@@ -38,7 +38,7 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.4";
+our $VERSION = "0.1.5";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
