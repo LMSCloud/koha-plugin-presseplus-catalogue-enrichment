@@ -30,7 +30,7 @@
                 </li>
 
                 <li>
-                    <label for="coversize">Bildröße: </label>
+                    <label for="coversize">Bildgröße: </label>
                     <select id="coversize "name="coversize">
                         [% coversizes = [ 
                                        { size => 'original', name => 'Original' },
