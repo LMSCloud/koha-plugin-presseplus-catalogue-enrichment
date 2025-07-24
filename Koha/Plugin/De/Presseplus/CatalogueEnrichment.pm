@@ -38,7 +38,7 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.5";
+our $VERSION = "0.1.6";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
@@ -684,7 +684,7 @@ sub enrichItem {
         };
         
         
-        if ( $presseplus_info && $presseplus_info->{description} ne "" and $presseplus_info->{name} ne "" ) {
+        if ( $presseplus_info && $presseplus_info->{description} ne "" and $presseplus_info->{name} ne "" )
         {
 
             my $logged_in_user = Koha::Patrons->find( C4::Context->userenv->{number} );
