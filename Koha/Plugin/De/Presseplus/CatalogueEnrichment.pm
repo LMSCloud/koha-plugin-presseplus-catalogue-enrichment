@@ -309,10 +309,12 @@ sub intranet_js {
                     if( $(this).data("colname") == "itemnotes" )
                        notesrow = rownum;
                 });
-                $('#cat_additem #itemst tbody tr td:nth-child(' + rownum + ')').each(function() {
-                    var newContent = $('<div/>').addClass('itemnotes').html(this.innerText);
-                    $(this).empty().append(newContent);
-                });
+                if ( rownum > 0 ) {
+                    $('#cat_additem #itemst tbody tr td:nth-child(' + rownum + ')').each(function() {
+                        var newContent = $('<div/>').addClass('itemnotes').html(this.innerText);
+                        $(this).empty().append(newContent);
+                    });
+                }
             }
             $( "#catalog_detail #holdings_table .itemnotes, #cat_additem #itemst .itemnotes" ).each(function( index ) {
                 if ( this.innerText.length > 0 && this.offsetWidth < this.scrollWidth ) {
