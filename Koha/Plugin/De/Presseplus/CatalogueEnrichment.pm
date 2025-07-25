@@ -301,7 +301,20 @@ sub intranet_js {
     
     $intranetJSadd .= q?
         $(document).ready( function(){
-            $( "#catalog_detail #holdings_table .itemnotes" ).each(function( index ) {
+            if ( $('#cat_additem #itemst').length ) {
+                var notesrow = 0;
+                var rownum = 0;
+                $('#cat_additem #itemst thead tr th').each(function() {
+                    rownum++;
+                    if( $(this).data("colname") == "itemnotes" )
+                       notesrow = rownum;
+                });
+                $('#cat_additem #itemst tbody tr td:nth-child(' + rownum + ')').each(function() {
+                    var newContent = $('<div/>').addClass('itemnotes').html(this.innerText);
+                    $(this).empty().append(newContent);
+                });
+            }
+            $( "#catalog_detail #holdings_table .itemnotes, #cat_additem #itemst .itemnotes" ).each(function( index ) {
                 if ( this.innerText.length > 0 && this.offsetWidth < this.scrollWidth ) {
                     var fullText = this.innerText;
                     $('<a>Mehr lesen</a>').click( function( event ){
@@ -316,20 +329,6 @@ sub intranet_js {
                 . q?&itemnumber=' + itemnumber;
                 $(this).find('td.actions ul').append('<li><a href="' + href + '"><i class="fa fa-book"></i> Anreichern mit Presseplus</a></li>');
             });
-            
-            if ( $('#cat_additem #itemst').length ) {
-                var notesrow = 0;
-                var rownum = 0;
-                $('#cat_additem #itemst thead tr th').each(function() {
-                    rownum++;
-                    if( $(this).data("colname") == "itemnotes" )
-                       notesrow = rownum;
-                });
-                $('#cat_additem #itemst tbody tr td:nth-child(' + rownum + ')').each(function() {
-                    var newContent = $('<div/>').addClass('itemnotes').html(this.innerText);
-                    $(this).empty().append(newContent);
-                });
-            }
         });
     </script>
     ?;
