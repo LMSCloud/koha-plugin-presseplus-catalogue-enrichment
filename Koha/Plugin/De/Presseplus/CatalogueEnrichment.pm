@@ -38,7 +38,7 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.7";
+our $VERSION = "0.1.8";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
@@ -107,6 +107,13 @@ sub opac_head {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    #cat_additem #itemst .itemnotes {
+      width: 8em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #cat_additem #itemst 
     #opac-detail #holdingst .bookcover img {
         max-height: 100%;
         max-width: 100%;
@@ -309,6 +316,20 @@ sub intranet_js {
                 . q?&itemnumber=' + itemnumber;
                 $(this).find('td.actions ul').append('<li><a href="' + href + '"><i class="fa fa-book"></i> Anreichern mit Presseplus</a></li>');
             });
+            
+            if ( $('#cat_additem #itemst').length ) {
+                var notesrow = 0;
+                var rownum = 0;
+                $('#cat_additem #itemst thead tr th').each(function() {
+                    rownum++;
+                    if( $(this).data("colname") == "itemnotes" )
+                       notesrow = rownum;
+                });
+                $('#cat_additem #itemst tbody tr td:nth-child(' + rownum + ')').each(function() {
+                    var newContent = $('<div/>').addClass('itemnotes').html(this.innerText);
+                    $(this).empty().append(newContent);
+                });
+            }
         });
     </script>
     ?;
