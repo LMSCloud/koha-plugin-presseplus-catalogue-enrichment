@@ -38,7 +38,7 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.10";
+our $VERSION = "0.1.11";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
@@ -103,12 +103,6 @@ sub opac_head {
     #opac-detail #holdingst .itemnotes {
       width: 8em;
       display: table-cell;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    #cat_additem #itemst .itemnotes {
-      width: 8em;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -198,7 +192,7 @@ sub intranet_head {
 
     return q|
         <style>
-            #catalog_detail #holdings_table .itemnotes {
+            #catalog_detail #holdings_table .itemnotes, #cat_additem #itemst .itemnotes  {
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
