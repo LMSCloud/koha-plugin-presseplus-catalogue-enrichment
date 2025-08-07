@@ -38,14 +38,14 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.12";
+our $VERSION = "0.1.13";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
     author          => 'Jonathan Druart & LMSCloud GmbH',
     date_authored   => '2020-07-23',
-    date_updated    => "2025-07-29",
+    date_updated    => "2025-08-07",
     minimum_version => $MINIMUM_VERSION,
     maximum_version => undef,
     version         => $VERSION,
