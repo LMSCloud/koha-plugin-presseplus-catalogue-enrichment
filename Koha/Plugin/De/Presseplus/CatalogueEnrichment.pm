@@ -69,12 +69,20 @@ sub tool {
     my ( $self, $args ) = @_;
 
     my $cgi = $self->{'cgi'};
-
-    unless ( $cgi->param('submitted') ) {
-        $self->tool_step1();
+    
+    my $toolaction = $cgi->param('toolaction');
+    
+    if ( $toolaction && $toolaction eq 'enrichItem' ) {
+        $self->enrichItem();
+    }
+    elsif ( $toolaction && $toolaction eq 'catalogue' ) {
+        $self->catalogue();
+    }
+    elsif ( $cgi->param('submitted') ) {
+        $self->tool_step2();
     }
     else {
-        $self->tool_step2();
+        $self->tool_step1();
     }
 }
 
@@ -281,7 +289,7 @@ sub intranet_js {
     
     if ( $biblionumber ) {
         $intranetJSadd .= sprintf q|
-        $('<li><a href="/cgi-bin/koha/plugins/run.pl?class=%s&method=catalogue&biblionumber=%s">Neues Heft von Presseplus</a></li>').insertAfter($("#newitem").parent());
+        $('<li><a href="/cgi-bin/koha/plugins/run.pl?class=%s&method=tool&toolaction=catalogue&biblionumber=%s">Neues Heft von Presseplus</a></li>').insertAfter($("#newitem").parent());
         |, $self->{metadata}->{class}, $biblionumber;
     } else {
         $intranetJSadd .= q|
@@ -319,7 +327,7 @@ sub intranet_js {
             $( "#catalog_detail #holdings_table tbody tr" ).each(function( index ) {
                 var itemnumber = $(this).data("itemnumber");
                 var href = '? .
-                sprintf q|/cgi-bin/koha/plugins/run.pl?class=%s&method=enrichItem&biblionumber=%s|, $self->{metadata}->{class}, ($biblionumber||'')
+                sprintf q|/cgi-bin/koha/plugins/run.pl?class=%s&method=tool&toolaction=enrichItem&biblionumber=%s|, $self->{metadata}->{class}, ($biblionumber||'')
                 . q?&itemnumber=' + itemnumber;
                 $(this).find('td.actions ul').append('<li><a href="' + href + '"><i class="fa fa-book"></i> Anreichern mit Presseplus</a></li>');
             });
@@ -657,6 +665,7 @@ sub enrichItem {
         issuenumber => $issuenumber,
         apikey => $self->retrieve_data('apikey'),
         enrichItem => 1,
+        toolaction => $cgi->param('toolaction'),
         C4::Search::enabled_staff_search_views,
     );
 
@@ -837,6 +846,7 @@ sub catalogue {
         biblio => $biblio,
         biblioitem => $biblioitem,
         apikey => $self->retrieve_data('apikey'),
+        toolaction => $cgi->param('toolaction'),
         C4::Search::enabled_staff_search_views,
     );
 

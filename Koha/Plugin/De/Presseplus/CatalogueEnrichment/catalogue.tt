@@ -91,6 +91,7 @@
                             <form method="post" class="validated">
                                 <input type="hidden" name="class" value="[% CLASS | html %]"/>
                                 <input type="hidden" name="method" value="[% METHOD | html %]"/>
+                                <input type="hidden" name="toolaction" value="[% toolaction | html %]"/>
                                 <input type="hidden" name="issn" value="" data-issn="[% biblioitem.issn | html %]" data-title="[% biblio.title | html %]"/>
                                 <input type="hidden" name="ean" value="" data-ean="[% biblioitem.ean | html %]"/>
 

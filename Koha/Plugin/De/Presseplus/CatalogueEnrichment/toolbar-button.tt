@@ -1,5 +1,5 @@
 <div class="btn-group">
-    <a class="btn btn-default" href="/cgi-bin/koha/plugins/run.pl?class=[% CLASS | html %]&method=catalogue&biblionumber=[% biblionumber | html %]">
+    <a class="btn btn-default" href="/cgi-bin/koha/plugins/run.pl?class=[% CLASS | html %]&method=tool&toolaction=catalogue&biblionumber=[% biblionumber | html %]">
       <i class="fa fa-book" aria-hidden="true"></i>
       Neues Heft von Presseplus
     </a>
