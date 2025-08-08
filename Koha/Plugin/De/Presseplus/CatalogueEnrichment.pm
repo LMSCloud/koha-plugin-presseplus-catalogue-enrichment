@@ -38,14 +38,14 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.13";
+our $VERSION = "0.1.14";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
     author          => 'Jonathan Druart & LMSCloud GmbH',
     date_authored   => '2020-07-23',
-    date_updated    => "2025-08-07",
+    date_updated    => "2025-08-08",
     minimum_version => $MINIMUM_VERSION,
     maximum_version => undef,
     version         => $VERSION,
@@ -118,6 +118,10 @@ sub opac_head {
     #cat_additem #itemst 
     #opac-detail #holdingst .bookcover img {
         max-height: 100%;
+        max-width: 100%;
+        margin: unset;
+    }
+    #opac-detail #holdingst .cover-image img {
         max-width: 100%;
         margin: unset;
     }
