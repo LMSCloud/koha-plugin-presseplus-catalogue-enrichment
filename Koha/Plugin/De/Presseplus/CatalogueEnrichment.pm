@@ -38,14 +38,14 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.14";
+our $VERSION = "0.1.15";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
     author          => 'Jonathan Druart & LMSCloud GmbH',
     date_authored   => '2020-07-23',
-    date_updated    => "2025-08-08",
+    date_updated    => "2025-08-11",
     minimum_version => $MINIMUM_VERSION,
     maximum_version => undef,
     version         => $VERSION,
@@ -966,11 +966,37 @@ sub catalogue {
     exit;
 }
 
+sub getFirstApiKey {
+    my $self = shift; 
+    my $apikey = $self->retrieve_data('apikey');
+    
+    if ( $apikey ) {
+        my @apikeys = $self->getApiKeys();
+        $apikey = $apikeys[0];
+    }
+    
+    return $apikey;
+}
+
+sub getApiKeys {
+    my $self = shift; 
+    my $apikey = $self->retrieve_data('apikey');
+    my @apikeys;
+    
+    if ( $apikey ) {
+        @apikeys = split(/\|/,$apikey);
+        for (my $i=0;$i<=$#apikeys;$i++) {
+            $apikeys[$i] =~ s/(^\s+|\s+$)//g;
+        }
+    }
+    return @apikeys;
+}
+
 sub retrieve_toc_image {
     my ( $self, $issn_ean, $release_code ) = @_;
 
     my $req;
-    my $apikey = $self->retrieve_data('apikey'); 
+    my $apikey = $self->getFirstApiKey(); 
     if ( $apikey ) {
         $req = HTTP::Request->new(
             GET => sprintf 'https://contents.presseplus.eu/%s/%s/%s?Auth=%s',
@@ -997,7 +1023,7 @@ sub retrieve_cover_image {
     my ( $self, $issn_ean, $release_code ) = @_;
 
     my $req;
-    my $apikey = $self->retrieve_data('apikey'); 
+    my $apikey = $self->getFirstApiKey(); 
     if ( $apikey ) {
         $req = HTTP::Request->new(
             GET => sprintf 'https://cover.presseplus.eu/%s/%s/%s?Auth=%s',
@@ -1025,7 +1051,7 @@ sub retrieve_info {
     my ( $self, $issn_ean, $release_code ) = @_;
 
     my $req;
-    my $apikey = $self->retrieve_data('apikey'); 
+    my $apikey = $self->getFirstApiKey(); 
     if ( $apikey ) {
         $req = HTTP::Request->new(GET => sprintf 'https://service.presseplus.de/contentText/%s/%s?Auth=%s', $issn_ean, $release_code, $apikey);
     } else {
@@ -1044,20 +1070,20 @@ sub retrieve_info {
 sub get_journal_list {
     my ( $self, $issn_ean, $release_code ) = @_;
     my $req;
-    my $apikey = $self->retrieve_data('apikey'); 
     my $journalList = [];
+    my $checkList = {};
+    my $cache     = Koha::Cache::Memory::Lite->get_instance();
     
-    if ( $apikey ) {
-        
-        my $cache     = Koha::Cache::Memory::Lite->get_instance();
-        my $cache_key = 'plugin:presseplus:lsttime';
-
-        my $time = $cache->get($cache_key);
-        if ($time && (time - $time) < 3600 ) {
-            $cache_key = 'plugin:presseplus:journals';
-            $journalList = $cache->get($cache_key);
-            return ($journalList);
-        }
+    my $cache_key = 'plugin:presseplus:lsttime';
+    my $time = $cache->get($cache_key);
+    if ($time && (time - $time) < 3600 ) {
+        $cache_key = 'plugin:presseplus:journals';
+        $journalList = $cache->get($cache_key);
+        return ($journalList);
+    }
+    
+    my @apikeys = $self->getApiKeys();
+    foreach my $apikey( @apikeys ) {
     
         my $nextPortion = 1;
         my $portionSize = 50;
@@ -1071,6 +1097,13 @@ sub get_journal_list {
                 my $journals = decode_json( $res->content );
                 if ( scalar(@$journals) > 0 ) {
                     foreach my $journal(@$journals) {
+                        my $checkkey = $journal->{productName} || '';
+                        $checkkey .= $journal->{issn} || '';
+                        $checkkey .= $journal->{ean} || '';
+                        
+                        next if exists( $checkList->{$checkkey} );
+                        $checkList->{$checkkey} = 1;
+                        
                         my $journalAdd = {
                                              name            => $journal->{productName},
                                              issn            => $journal->{issn},
@@ -1097,12 +1130,15 @@ sub get_journal_list {
             
             $nextPortion = 0 if ( $nextPortion > 100 || !$continue);
         }
-        
-        if ( scalar(@$journalList) > 0 ) {
-            $cache->set( $cache_key, time );
-            $cache_key = 'plugin:presseplus:journals';
-            $cache->set( $cache_key, $journalList );
-        }
+    }
+    
+    if ( scalar(@$journalList) > 0 ) {
+        $journalList = [ sort { lc($a->{name}) cmp lc($b->{name}) } @$journalList ];
+
+        $cache_key = 'plugin:presseplus:lsttime';
+        $cache->set( $cache_key, time );
+        $cache_key = 'plugin:presseplus:journals';
+        $cache->set( $cache_key, $journalList );
     }
     
     return $journalList;
