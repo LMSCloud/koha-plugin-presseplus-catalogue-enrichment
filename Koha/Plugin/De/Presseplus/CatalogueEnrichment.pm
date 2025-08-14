@@ -38,14 +38,14 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.15";
+our $VERSION = "0.1.16";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
     author          => 'Jonathan Druart & LMSCloud GmbH',
     date_authored   => '2020-07-23',
-    date_updated    => "2025-08-11",
+    date_updated    => "2025-08-14",
     minimum_version => $MINIMUM_VERSION,
     maximum_version => undef,
     version         => $VERSION,
@@ -210,6 +210,19 @@ sub intranet_head {
               white-space: nowrap;
               width: 8em;
             }
+            #circ_circulation #issues-table .item-note-public, #circ_returns #checkedintable .item-note-public {
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              width: 15em;
+              display:block;
+            }
+            .pplinkmore
+            {
+			  color: inherit;
+			  font-style: normal;
+			  font-weight: normal;
+			}
         </style>
     |;
 }
@@ -222,7 +235,6 @@ sub getBstrapModal {
                 buttons = buttons || [{ Value: "Schließen", Css: "btn-primary", Callback: function (event) { BstrapModal.Close(); } }];
                 
             BstrapModal.HtmlEncode = function (value,withBreak) {
-                console.log($('<div/>').text(value).html());
                 var txt = $('<div/>').text(value).html();
                 if ( withBreak ) {
                     txt = txt.split('\n').filter(v => v.trim()).map(content => `<p>${content.trim()}</p>`).join('\n');
@@ -336,6 +348,23 @@ sub intranet_js {
                 $(this).find('td.actions ul').append('<li><a href="' + href + '"><i class="fa fa-book"></i> Anreichern mit Presseplus</a></li>');
             });
         });
+    </script>
+    
+    <script type="text/javascript">         
+        var showPresseplusReadMore = function() {
+            $( "#circ_circulation #issues-table .item-note-public,#circ_returns #checkedintable .item-note-public" ).each(function( index ) {
+                if ( this.innerText.length > 0 && this.offsetWidth < this.scrollWidth ) {
+                    var fullText = this.innerText;
+                    $('<span class="circ-hlt"><a class="pplinkmore">Mehr lesen</a><br></span>').click( function( event ){
+                        new BstrapModal('Inhalt',fullText,'').Show();
+                    }).insertAfter(this);
+                }
+            });
+        }
+        
+		 $('#circ_circulation #issues-table,#circ_returns #checkedintable')
+			.off('init.dt', showPresseplusReadMore)
+			.on('init.dt', showPresseplusReadMore);
     </script>
     ?;
     return $intranetJSadd;
