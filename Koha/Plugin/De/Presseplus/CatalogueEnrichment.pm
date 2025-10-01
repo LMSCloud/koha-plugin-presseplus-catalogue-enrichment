@@ -22,6 +22,9 @@ use C4::Context;
 use C4::Auth;
 use C4::Charset;
 use C4::Search;        # enabled_staff_search_views
+use C4::Biblio qw( GetMarcFromKohaField GetMarcStructure IsMarcStructureInternal );
+
+use Koha::Libraries;
 use Koha::BiblioFrameworks;
 use Koha::Biblios;
 use Koha::Items;
@@ -31,6 +34,9 @@ use Koha::CoverImages;
 use Koha::Serials;
 use Koha::Serial::Items;
 use Koha::DateUtils qw( dt_from_string output_pref );
+
+use DateTime;
+use Date::Calc qw( Today );
 use GD::Image;
 use LWP::UserAgent;
 use HTTP::Request;
@@ -38,14 +44,14 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.16";
+our $VERSION = "0.1.17";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
     author          => 'Jonathan Druart & LMSCloud GmbH',
     date_authored   => '2020-07-23',
-    date_updated    => "2025-08-14",
+    date_updated    => "2025-10-01",
     minimum_version => $MINIMUM_VERSION,
     maximum_version => undef,
     version         => $VERSION,
@@ -400,10 +406,12 @@ sub configure {
             default_itemtype                  => $self->retrieve_data('default_itemtype'),
             dbs_group                         => $self->retrieve_data('dbs_group'),
             itemtypes                         => scalar Koha::ItemTypes->search_with_localization,
+            copy_defaults_framework           => $self->retrieve_data('copy_defaults_framework'),
             default_framework                 => $self->retrieve_data('default_framework'),
             frameworks                        => scalar Koha::BiblioFrameworks->search( {}, { order_by => ['frameworktext'] } ),
             attach_cover_to_biblio            => $self->retrieve_data('attach_cover_to_biblio'),
             opac_item_cover_view_with_content => $self->retrieve_data('opac_item_cover_view_with_content'),
+            last_upgraded                     => $self->retrieve_data('last_upgraded'),
         );
 
         $self->output_html( $template->output() );
@@ -417,6 +425,7 @@ sub configure {
             toc_image                         => scalar $cgi->param('toc_image'),
             default_itemtype                  => scalar $cgi->param('default_itemtype'),
             default_framework                 => scalar $cgi->param('default_framework'),
+            copy_defaults_framework           => scalar $cgi->param('copy_defaults_framework'),
             attach_cover_to_biblio            => scalar $cgi->param('attach_cover_to_biblio'),
             dbs_group                         => scalar $cgi->param('dbs_group'),
             opac_item_cover_view_with_content => scalar $cgi->param('opac_item_cover_view_with_content'),
@@ -1201,6 +1210,29 @@ sub build_biblio {
 
     my $record = MARC::Record->new;
     C4::Charset::SetMarcUnicodeFlag( $record, C4::Context->preference("marcflavour") );
+    if ( $self->copy_defaults_framework ) {
+		my $copyFramework = $self->copy_defaults_framework;
+		if ( $copyFramework eq 'default' ) {
+			$copyFramework = '';
+		}
+		$self->_fill_record_with_default_values($copyFramework,$record);
+	}
+	
+	my $now = DateTime->now;
+	
+	my $marcorgcode = C4::Context->preference('MARCOrgCode');
+	my $userenv = C4::Context->userenv;
+	if ( $userenv && $userenv->{'branch'} ) {
+		my $library = Koha::Libraries->find( $userenv->{'branch'} );
+		# userenv's library could not exist because of a trick in misc/commit_file.pl (see FIXME and set_userenv statement)
+		$marcorgcode = $library ? $library->get_effective_marcorgcode : $marcorgcode;
+	}
+	if (! $record->field('003') ) {
+		$record->insert_fields_ordered(MARC::Field->new('003', $marcorgcode)) if ($marcorgcode);
+	}
+	if (! $record->field('005') ) {
+		$record->insert_fields_ordered( MARC::Field->new("005", sprintf("%04d",$now->year) . sprintf("%02d",$now->month) . sprintf("%02d",$now->day) . sprintf("%02d",$now->hour) . sprintf("%02d",$now->minute) . sprintf("%02d",$now->second) . '.0' ));
+	}
 
     if ( $issn ) {
         $record->append_fields(
@@ -1318,6 +1350,12 @@ sub default_framework {
     return $self->retrieve_data('default_framework') || '';
 }
 
+sub copy_defaults_framework {
+    my ($self) = @_;
+
+    return $self->retrieve_data('copy_defaults_framework') || '';
+}
+
 sub api_routes {
     my ( $self, $args ) = @_;
 
@@ -1375,6 +1413,72 @@ sub _convert_array_refs_to_absolute {
         push @res, $item;
     }
     return \@res;
+}
+
+sub _fill_record_with_default_values {
+    my ( $self, $framework, $record ) = @_;
+    
+    # get today date & replace YYYY, MM, DD if provided in the default value
+    my ( $year, $month, $day ) = Today();
+    my $ldyear = substr($year, -2); # last 2 digits of yeard
+    $month = sprintf( "%02d", $month );
+    $day   = sprintf( "%02d", $day );
+
+    my $tagslib = C4::Biblio::GetMarcStructure( 1, $framework, { unsafe => 1 } );
+    if ($tagslib) {
+        my ($itemfield) =
+          C4::Biblio::GetMarcFromKohaField( 'items.itemnumber' );
+        for my $tag ( sort keys %$tagslib ) {
+            next unless $tag;
+            next if $tag == $itemfield;
+            for my $subfield ( sort keys %{ $tagslib->{$tag} } ) {
+                next if C4::Biblio::IsMarcStructureInternal($tagslib->{$tag}{$subfield});
+
+                my $defaultvalue = $tagslib->{$tag}{$subfield}{defaultvalue};
+                if ( defined $defaultvalue and $defaultvalue ne '' ) {
+                
+                    $defaultvalue =~ s/YYYY/$year/g;
+                    $defaultvalue =~ s/YY/$ldyear/g;
+                    $defaultvalue =~ s/MM/$month/g;
+                    $defaultvalue =~ s/DD/$day/g;
+                    
+                    if ($tag eq '000' ) {
+						$record->leader($defaultvalue);
+					}
+					else {
+						my @fields = $record->field($tag);
+						if (@fields) {
+							for my $field (@fields) {
+								if ( $field->is_control_field ) {
+									$field->update($defaultvalue) if not defined $field->data;
+								}
+								elsif ( not defined $field->subfield($subfield) ) {
+									$field->add_subfields(
+										$subfield => $defaultvalue );
+								}
+							}
+						}
+						else {
+							if ( $tag < 10 ) { # is_control_field
+								$record->insert_fields_ordered(
+									MARC::Field->new(
+										$tag, $defaultvalue
+									)
+								);
+							}
+							else {
+								$record->insert_fields_ordered(
+									MARC::Field->new(
+										$tag, '', '', $subfield => $defaultvalue
+									)
+								);
+							}
+						}
+					}
+                }
+            }
+        }
+    }
 }
 
 

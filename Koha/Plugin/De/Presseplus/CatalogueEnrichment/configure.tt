@@ -188,7 +188,23 @@
                             [% END %]
                         [% END %]
                     </select>
-                    <span class="hint">Wenn Zeitschriftenhefte als Katalogeinträge erfasst werden, wird das ausgewählte Katalogframwork verwendet.</span>
+                    <span class="hint">Wenn Zeitschriftenhefte als Katalogeinträge erfasst werden, wird das ausgewählte Katalogframwork verwendet. Die manuelle Bearbeitung des angelegten Katalogsatzes erfolgt mit diesen Frameworkeinstellungen.</span>
+                </li>
+                
+                <li>
+                    <label for "copy_defaults_framework">Katalogframework zur Übernahme von Standardwerten: </label>
+                    <select id="copy_defaults_framework "name="copy_defaults_framework">
+						<option value="">-- Keines ausgewählt --</option>
+                        <option value="default">Standard</option>
+                        [% FOR framework IN frameworks %]
+                            [% IF framework.frameworkcode == copy_defaults_framework %]
+                                <option value="[% framework.frameworkcode | html %]" selected="selected">[% framework.frameworktext | html %]</option>
+                            [% ELSE %]
+                                <option value="[% framework.frameworkcode | html %]">[% framework.frameworktext | html %]</option>
+                            [% END %]
+                        [% END %]
+                    </select>
+                    <span class="hint">Wenn Zeitschriftenhefte als Katalogeinträge erfasst werden, sollen vom ausgewählten Katalogframework Standardwerte für Katalogfelder übernommen und vorbelegt werden. Die Standardwerte müssen für die entsprechenden Unterfelder in der Frameworkdefinition erfasst worden sein.</span>
                 </li>
 
             </ol>
@@ -206,11 +222,11 @@
     <hr/>
 
     <p>
-        <h5>Upgrade status</h5>
+        <h5>Aktualisierungsstatus des Plugins:</h5>
         [% IF last_upgraded %]
-            Plugin was last upgraded on this system on [% last_upgraded | $KohaDates with_hours => 1 %]
+            Das Plugin wurde zuletzt aktualisert am [% last_upgraded | $KohaDates with_hours => 1 %]
         [% ELSE %]
-            Plugin has never been upgraded.
+            Das Plugin wurde noch nicht aktualisiert.
         [% END %]
     </p>
 

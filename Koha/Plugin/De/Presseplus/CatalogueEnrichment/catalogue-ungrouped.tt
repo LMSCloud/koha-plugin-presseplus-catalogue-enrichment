@@ -142,7 +142,7 @@ $(document).ready(function(){
                   switchJournalSelectionInput();
               }, 
               success: function(data) {
-					var selectOption;
+					var selectOption = -1;
 					if ( isInitialized == 0 ) {
 						data.forEach((item, index) => {
 							if ( ean && item.ean == ean ) {
@@ -150,7 +150,7 @@ $(document).ready(function(){
 								console.log("Selected by ean " + ean + ", option " + index);
 							}
 						});
-						if (! selectOption ) {
+						if ( selectOption == -1 ) {
 							data.forEach((item, index) => {
 								if ( issn && item.issn == issn ) {
 									selectOption = index;
@@ -158,7 +158,7 @@ $(document).ready(function(){
 								}
 							});
 						}
-						if (! selectOption ) {
+						if ( selectOption == -1 ) {
 							data.forEach((item, index) => {
 								if ( title && item.name.normalize("NFD").toLowerCase() == title.normalize("NFD").toLowerCase() ) {
 									selectOption = index;
@@ -166,7 +166,7 @@ $(document).ready(function(){
 								}
 							});
 						}
-                        if (! selectOption ) {
+                        if ( selectOption == -1 ) {
                             selectOption = 0;
                         }
 						isInitialized = 1;
@@ -191,7 +191,7 @@ $(document).ready(function(){
                         if ( item.ean ) {
                             useId = item.ean;
                         }
-                        if ( useId && selectOption >= 0 && selectOption == index ) {
+                        if ( useId && selectOption != -1 && selectOption == index ) {
                             selectOptionValue = useId;
                         }
                         selectData.push(
