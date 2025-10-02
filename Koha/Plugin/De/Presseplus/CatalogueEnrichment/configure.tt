@@ -11,223 +11,229 @@
 
 <div id="breadcrumbs"><a href="/cgi-bin/koha/mainpage.pl">Start</a> &rsaquo; <a href="/cgi-bin/koha/plugins/plugins-home.pl">Plugins</a> &rsaquo; Presseplus &rsaquo; Konfiguration</div>
 
-<div id="doc3">
-    <!-- We can access our own plugins resource files using the PLUGIN_PATH variable. -->
-    <!--<img src="[% PLUGIN_PATH | html %]/logo.png" />-->
-    <h3>Presseplus Plugin: Konfiguration</h3>
+    <div class="main container-fluid">
+        <div class="row">
+            <div class="col-sm-12">
+                <main>
 
-    <!-- Notice our form here has no 'action', this is good, it means that our forms will always get passed back to 'plugins/run.pl'. You could hard code it instead if you prefer -->
-    <form method="get">
+					<h1>Presseplus Plugin: Konfiguration</h1>
 
-        <fieldset class="rows">
-            <legend>Konfiguration</legend>
+					<!-- Notice our form here has no 'action', this is good, it means that our forms will always get passed back to 'plugins/run.pl'. You could hard code it instead if you prefer -->
+					<form method="get">
 
-            <ol>
-                <li>
-                    <label for="apikey">API-Zugriffsschlüssel: </label>
-                    <input type="text" name="apikey" value="[% apikey | html %]" />
-                    <span class="hint">API-Zugriffschlüssel für die Presseplus REST API.</span>
-                </li>
+						<fieldset class="rows">
+							<legend>Konfiguration</legend>
 
-                <li>
-                    <label for="coversize">Bildgröße: </label>
-                    <select id="coversize "name="coversize">
-                        [% coversizes = [ 
-                                       { size => 'original', name => 'Original' },
-                                       { size => 'small', name => 'Klein' },
-                                       { size => 'medium', name => 'Medium' },
-                                       { size => 'large', name => 'Groß' },
-                                       { size => 'larger', name => 'Größer' },
-                                   ]
-                        %]
-                        [% FOR selsize IN coversizes %]
-                            [% IF selsize.size == coversize %]
-                                <option value="[% selsize.size | html %]" selected="selected">[% selsize.name | html %]</option>
-                            [% ELSE %]
-                                <option value="[% selsize.size | html %]">[% selsize.name | html %]</option>
-                            [% END %]
-                        [% END %]
-                    </select>
-                    <span class="hint">Größe der Titelbilder.
-                        <ul style="display:inline-grid">
-                            <li>Klein: 60px breit und 83px hoch, Füllfarbe Weiß</li>
-                            <li>Medium: 165px breit und 277px hoch, Füllfarbe Weiß</li>
-                            <li>Groß: 250px breit und 344px hoch, Füllfarbe Weiß</li>
-                            <li>Größer: 400px breit und 550px hoch, Füllfarbe Weiß</li>
-                            <li>Original: Originalgröße des gespeicherten Bildes mit ursprünglichen Seitenverhältnissen, ohne Füllfarbe</li>
-                        </ul>
-                    </span>
-                </li>
-            </ol>
+							<ol>
+								<li>
+									<label for="apikey">API-Zugriffsschlüssel: </label>
+									<input type="text" name="apikey" value="[% apikey | html %]" />
+									<span class="hint">API-Zugriffschlüssel für die Presseplus REST API.</span>
+								</li>
 
-            <ol class="radio">
-                <li>
-                    <label class="radio" for="toc_image">Download der Bilddatei des Inhaltsverzeichnisses:</label>
-                    <label for="toc_image">
-                        [% IF toc_image %]
-                            <input type="radio" id="toc_image" name="toc_image" value="1" checked="checked" />
-                        [% ELSE %]
-                            <input type="radio" id="toc_image" name="toc_image" value="1" />
-                        [% END %]
-                        Ja
-                    </label>
-                    <label for="no_toc_image">
-                        [% IF toc_image %]
-                            <input type="radio" id="no_toc_image" name="toc_image" value="0" />
-                        [% ELSE %]
-                            <input type="radio" id="no_toc_image" name="toc_image" value="0" checked="checked" />
-                        [% END %]
-                        Nein
-                    </label>
-                    <span class="hint">Lade zusätzlich zum Titelbild die Bilddatei des Inhaltsverzeichnisses des Zeitschriftenheftes.</span>
-                </li>
+								<li>
+									<label for="coversize">Bildgröße: </label>
+									<select id="coversize "name="coversize">
+										[% coversizes = [ 
+													   { size => 'original', name => 'Original' },
+													   { size => 'small', name => 'Klein' },
+													   { size => 'medium', name => 'Medium' },
+													   { size => 'large', name => 'Groß' },
+													   { size => 'larger', name => 'Größer' },
+												   ]
+										%]
+										[% FOR selsize IN coversizes %]
+											[% IF selsize.size == coversize %]
+												<option value="[% selsize.size | html %]" selected="selected">[% selsize.name | html %]</option>
+											[% ELSE %]
+												<option value="[% selsize.size | html %]">[% selsize.name | html %]</option>
+											[% END %]
+										[% END %]
+									</select>
+									<span class="hint">Größe der Titelbilder.
+										<ul style="display:inline-grid">
+											<li>Klein: 60px breit und 83px hoch, Füllfarbe Weiß</li>
+											<li>Medium: 165px breit und 277px hoch, Füllfarbe Weiß</li>
+											<li>Groß: 250px breit und 344px hoch, Füllfarbe Weiß</li>
+											<li>Größer: 400px breit und 550px hoch, Füllfarbe Weiß</li>
+											<li>Original: Originalgröße des gespeicherten Bildes mit ursprünglichen Seitenverhältnissen, ohne Füllfarbe</li>
+										</ul>
+									</span>
+								</li>
+							</ol>
 
-                <li>
-                    <label class="radio" for="can_be_grouped">Zeitschriftenhefte als Exemplare zu bestehenden Titeldatensätzen ergänzen: </label>
-                    <label for="can_be_grouped">
-                        [% IF can_be_grouped || can_be_grouped == '' %]
-                            <input type="radio" id="can_be_grouped" name="can_be_grouped" value="1" checked="checked" />
-                        [% ELSE %]
-                            <input type="radio" id="can_be_grouped" name="can_be_grouped" value="1" />
-                        [% END %]
-                        Ja
-                    </label>
-                    <label for="cannot_be_grouped">
-                        [% IF can_be_grouped %]
-                            <input type="radio" id="cannot_be_grouped" name="can_be_grouped" value="0" />
-                        [% ELSE %]
-                            <input type="radio" id="cannot_be_grouped" name="can_be_grouped" value="0" checked="checked" />
-                        [% END %]
-                        Nein
-                    </label>
-                    <span class="hint">Wenn "Ja" ausgewählt wird, bietet die Detailansicht eines Titeldatensatzes die zusätzliche Aktion 'Neues Heft von Presseplus' an, beim Exemplar steht “Anreichern mit Presseplus” als Option zur Verfügung.</span>
-                </li>
+							<ol class="radio">
+								<li>
+									<label class="radio" for="toc_image">Download der Bilddatei des Inhaltsverzeichnisses:</label>
+									<label for="toc_image">
+										[% IF toc_image %]
+											<input type="radio" id="toc_image" name="toc_image" value="1" checked="checked" />
+										[% ELSE %]
+											<input type="radio" id="toc_image" name="toc_image" value="1" />
+										[% END %]
+										Ja
+									</label>
+									<label for="no_toc_image">
+										[% IF toc_image %]
+											<input type="radio" id="no_toc_image" name="toc_image" value="0" />
+										[% ELSE %]
+											<input type="radio" id="no_toc_image" name="toc_image" value="0" checked="checked" />
+										[% END %]
+										Nein
+									</label>
+									<span class="hint">Lade zusätzlich zum Titelbild die Bilddatei des Inhaltsverzeichnisses des Zeitschriftenheftes.</span>
+								</li>
 
-                <li>
-                    <label class="radio" for="attach_cover_to_biblio">Titelbild zum Titelsatz ergänzen: </label>
-                    <label for="attach_cover_to_biblio">
-                        [% IF attach_cover_to_biblio %]
-                            <input type="radio" id="attach_cover_to_biblio" name="attach_cover_to_biblio" value="1" checked="checked" />
-                        [% ELSE %]
-                            <input type="radio" id="attach_cover_to_biblio" name="attach_cover_to_biblio" value="1" />
-                        [% END %]
-                        Ja
-                    </label>
-                    <label for="dont_attach_cover_to_biblio">
-                        [% IF attach_cover_to_biblio %]
-                            <input type="radio" id="dont_attach_cover_to_biblio" name="attach_cover_to_biblio" value="0" />
-                        [% ELSE %]
-                            <input type="radio" id="dont_attach_cover_to_biblio" name="attach_cover_to_biblio" value="0" checked="checked" />
-                        [% END %]
-                        Nein
-                    </label>
-                    <span class="hint">Werden Zeitschriftenhefte als Exemplare zum Titelsatz hinzugefügt, können bei Aktivierung die Titelbilder sowohl zum Titelsatz als auch zum Exemplarsatz ergänzt werden.</span>
-                </li>
-                
-                <li>
-                    <label class="radio" for="opac_item_cover_view_with_content">Cover-Anzeige für Exemplare mit Inhaltsangabe: </label>
-                    <label for="opac_item_cover_view_with_content">
-                        [% IF opac_item_cover_view_with_content %]
-                            <input type="radio" id="opac_item_cover_view_with_content" name="opac_item_cover_view_with_content" value="1" checked="checked" />
-                        [% ELSE %]
-                            <input type="radio" id="opac_item_cover_view_with_content" name="opac_item_cover_view_with_content" value="1" />
-                        [% END %]
-                        Ja
-                    </label>
-                    <label for="no_opac_item_cover_view_with_content">
-                        [% IF opac_item_cover_view_with_content %]
-                            <input type="radio" id="no_opac_item_cover_view_with_content" name="opac_item_cover_view_with_content" value="0" />
-                        [% ELSE %]
-                            <input type="radio" id="no_opac_item_cover_view_with_content" name="opac_item_cover_view_with_content" value="0" checked="checked" />
-                        [% END %]
-                        Nein
-                    </label>
-                    <span class="hint">Werden Zeitschriftenhefte als Exemplare zum Titelsatz hinzugefügt, kann bei der initialen Anzeige der Titelbildes des Heftes im Großformat die Inhaltsangabe aus der Exemplarnotiz mit angezeigt werden.</span>
-                </li>
-            </ol>
+								<li>
+									<label class="radio" for="can_be_grouped">Zeitschriftenhefte als Exemplare zu bestehenden Titeldatensätzen ergänzen: </label>
+									<label for="can_be_grouped">
+										[% IF can_be_grouped || can_be_grouped == '' %]
+											<input type="radio" id="can_be_grouped" name="can_be_grouped" value="1" checked="checked" />
+										[% ELSE %]
+											<input type="radio" id="can_be_grouped" name="can_be_grouped" value="1" />
+										[% END %]
+										Ja
+									</label>
+									<label for="cannot_be_grouped">
+										[% IF can_be_grouped %]
+											<input type="radio" id="cannot_be_grouped" name="can_be_grouped" value="0" />
+										[% ELSE %]
+											<input type="radio" id="cannot_be_grouped" name="can_be_grouped" value="0" checked="checked" />
+										[% END %]
+										Nein
+									</label>
+									<span class="hint">Wenn "Ja" ausgewählt wird, bietet die Detailansicht eines Titeldatensatzes die zusätzliche Aktion 'Neues Heft von Presseplus' an, beim Exemplar steht “Anreichern mit Presseplus” als Option zur Verfügung.</span>
+								</li>
 
-            <ol>
-                <li>
-                    <label for "default_itemtype">Medientyp der Heftexemplare: </label>
-                    <select id="default_itemtype"name="default_itemtype">
-                        [% FOR itemtype IN itemtypes %]
-                            [% IF itemtype.itemtype == default_itemtype %]
-                                <option value="[% itemtype.itemtype | html %]" selected="selected">[% itemtype.translated_description | html %]</option>
-                            [% ELSE %]
-                                <option value="[% itemtype.itemtype | html %]">[% itemtype.translated_description | html %]</option>
-                            [% END %]
-                        [% END %]
-                    </select>
-                    <span class="hint">Voreingestellter Medientyp für neu erzeugte Heftexemplare.</span>
-                </li>
-                
-                [% SET dbsvalues = AuthorisedValues.GetAuthValueDropbox('DBS_WERTE') %]
-                <li>
-                    <label for "dbs_group">DBS Merkmal der Heftexemplare: </label>
-                    <select id="dbs_group"name="dbs_group">
-                        [% FOR dbsvalue IN dbsvalues %]
-                            [% IF dbsvalue.authorised_value == dbs_group %]
-                                <option value="[% dbsvalue.authorised_value | html %]" selected="selected">[% dbsvalue.lib_opac OR dbsvalue.lib | html %]</option>
-                            [% ELSE %]
-                                <option value="[% dbsvalue.authorised_value | html %]">[% dbsvalue.lib_opac OR dbsvalue.lib | html %]</option>
-                            [% END %]
-                        [% END %]
-                    </select>
-                    <span class="hint">Voreingestelltes DBS Merkmal für neu erzeugte Heftexemplare.</span>
-                </li>
+								<li>
+									<label class="radio" for="attach_cover_to_biblio">Titelbild zum Titelsatz ergänzen: </label>
+									<label for="attach_cover_to_biblio">
+										[% IF attach_cover_to_biblio %]
+											<input type="radio" id="attach_cover_to_biblio" name="attach_cover_to_biblio" value="1" checked="checked" />
+										[% ELSE %]
+											<input type="radio" id="attach_cover_to_biblio" name="attach_cover_to_biblio" value="1" />
+										[% END %]
+										Ja
+									</label>
+									<label for="dont_attach_cover_to_biblio">
+										[% IF attach_cover_to_biblio %]
+											<input type="radio" id="dont_attach_cover_to_biblio" name="attach_cover_to_biblio" value="0" />
+										[% ELSE %]
+											<input type="radio" id="dont_attach_cover_to_biblio" name="attach_cover_to_biblio" value="0" checked="checked" />
+										[% END %]
+										Nein
+									</label>
+									<span class="hint">Werden Zeitschriftenhefte als Exemplare zum Titelsatz hinzugefügt, können bei Aktivierung die Titelbilder sowohl zum Titelsatz als auch zum Exemplarsatz ergänzt werden.</span>
+								</li>
+								
+								<li>
+									<label class="radio" for="opac_item_cover_view_with_content">Cover-Anzeige für Exemplare mit Inhaltsangabe: </label>
+									<label for="opac_item_cover_view_with_content">
+										[% IF opac_item_cover_view_with_content %]
+											<input type="radio" id="opac_item_cover_view_with_content" name="opac_item_cover_view_with_content" value="1" checked="checked" />
+										[% ELSE %]
+											<input type="radio" id="opac_item_cover_view_with_content" name="opac_item_cover_view_with_content" value="1" />
+										[% END %]
+										Ja
+									</label>
+									<label for="no_opac_item_cover_view_with_content">
+										[% IF opac_item_cover_view_with_content %]
+											<input type="radio" id="no_opac_item_cover_view_with_content" name="opac_item_cover_view_with_content" value="0" />
+										[% ELSE %]
+											<input type="radio" id="no_opac_item_cover_view_with_content" name="opac_item_cover_view_with_content" value="0" checked="checked" />
+										[% END %]
+										Nein
+									</label>
+									<span class="hint">Werden Zeitschriftenhefte als Exemplare zum Titelsatz hinzugefügt, kann bei der initialen Anzeige der Titelbildes des Heftes im Großformat die Inhaltsangabe aus der Exemplarnotiz mit angezeigt werden.</span>
+								</li>
+							</ol>
 
-                <li>
-                    <label for "default_framework">Katalogframework: </label>
-                    <select id="default_framework "name="default_framework">
-                        <option value="">Standard</option>
-                        [% FOR framework IN frameworks %]
-                            [% IF framework.frameworkcode == default_framework %]
-                                <option value="[% framework.frameworkcode | html %]" selected="selected">[% framework.frameworktext | html %]</option>
-                            [% ELSE %]
-                                <option value="[% framework.frameworkcode | html %]">[% framework.frameworktext | html %]</option>
-                            [% END %]
-                        [% END %]
-                    </select>
-                    <span class="hint">Wenn Zeitschriftenhefte als Katalogeinträge erfasst werden, wird das ausgewählte Katalogframwork verwendet. Die manuelle Bearbeitung des angelegten Katalogsatzes erfolgt mit diesen Frameworkeinstellungen.</span>
-                </li>
-                
-                <li>
-                    <label for "copy_defaults_framework">Katalogframework zur Übernahme von Standardwerten: </label>
-                    <select id="copy_defaults_framework "name="copy_defaults_framework">
-						<option value="">-- Keines ausgewählt --</option>
-                        <option value="default">Standard</option>
-                        [% FOR framework IN frameworks %]
-                            [% IF framework.frameworkcode == copy_defaults_framework %]
-                                <option value="[% framework.frameworkcode | html %]" selected="selected">[% framework.frameworktext | html %]</option>
-                            [% ELSE %]
-                                <option value="[% framework.frameworkcode | html %]">[% framework.frameworktext | html %]</option>
-                            [% END %]
-                        [% END %]
-                    </select>
-                    <span class="hint">Wenn Zeitschriftenhefte als Katalogeinträge erfasst werden, sollen vom ausgewählten Katalogframework Standardwerte für Katalogfelder übernommen und vorbelegt werden. Die Standardwerte müssen für die entsprechenden Unterfelder in der Frameworkdefinition erfasst worden sein.</span>
-                </li>
+							<ol>
+								<li>
+									<label for "default_itemtype">Medientyp der Heftexemplare: </label>
+									<select id="default_itemtype"name="default_itemtype">
+										[% FOR itemtype IN itemtypes %]
+											[% IF itemtype.itemtype == default_itemtype %]
+												<option value="[% itemtype.itemtype | html %]" selected="selected">[% itemtype.translated_description | html %]</option>
+											[% ELSE %]
+												<option value="[% itemtype.itemtype | html %]">[% itemtype.translated_description | html %]</option>
+											[% END %]
+										[% END %]
+									</select>
+									<span class="hint">Voreingestellter Medientyp für neu erzeugte Heftexemplare.</span>
+								</li>
+								
+								[% SET dbsvalues = AuthorisedValues.GetAuthValueDropbox('DBS_WERTE') %]
+								<li>
+									<label for "dbs_group">DBS Merkmal der Heftexemplare: </label>
+									<select id="dbs_group"name="dbs_group">
+										[% FOR dbsvalue IN dbsvalues %]
+											[% IF dbsvalue.authorised_value == dbs_group %]
+												<option value="[% dbsvalue.authorised_value | html %]" selected="selected">[% dbsvalue.lib_opac OR dbsvalue.lib | html %]</option>
+											[% ELSE %]
+												<option value="[% dbsvalue.authorised_value | html %]">[% dbsvalue.lib_opac OR dbsvalue.lib | html %]</option>
+											[% END %]
+										[% END %]
+									</select>
+									<span class="hint">Voreingestelltes DBS Merkmal für neu erzeugte Heftexemplare.</span>
+								</li>
 
-            </ol>
-        </fieldset>
+								<li>
+									<label for "default_framework">Katalogframework: </label>
+									<select id="default_framework "name="default_framework">
+										<option value="">Standard</option>
+										[% FOR framework IN frameworks %]
+											[% IF framework.frameworkcode == default_framework %]
+												<option value="[% framework.frameworkcode | html %]" selected="selected">[% framework.frameworktext | html %]</option>
+											[% ELSE %]
+												<option value="[% framework.frameworkcode | html %]">[% framework.frameworktext | html %]</option>
+											[% END %]
+										[% END %]
+									</select>
+									<span class="hint">Wenn Zeitschriftenhefte als Katalogeinträge erfasst werden, wird das ausgewählte Katalogframwork verwendet. Die manuelle Bearbeitung des angelegten Katalogsatzes erfolgt mit diesen Frameworkeinstellungen.</span>
+								</li>
+								
+								<li>
+									<label for "copy_defaults_framework">Katalogframework zur Übernahme von Standardwerten: </label>
+									<select id="copy_defaults_framework "name="copy_defaults_framework">
+										<option value="">-- Keines ausgewählt --</option>
+										<option value="default">Standard</option>
+										[% FOR framework IN frameworks %]
+											[% IF framework.frameworkcode == copy_defaults_framework %]
+												<option value="[% framework.frameworkcode | html %]" selected="selected">[% framework.frameworktext | html %]</option>
+											[% ELSE %]
+												<option value="[% framework.frameworkcode | html %]">[% framework.frameworktext | html %]</option>
+											[% END %]
+										[% END %]
+									</select>
+									<span class="hint">Wenn Zeitschriftenhefte als Katalogeinträge erfasst werden, sollen vom ausgewählten Katalogframework Standardwerte für Katalogfelder übernommen und vorbelegt werden. Die Standardwerte müssen für die entsprechenden Unterfelder in der Frameworkdefinition erfasst worden sein.</span>
+								</li>
 
-        <fieldset class="action">
-            <input type="hidden" name="save" value="1" />
-            <input type="hidden" name="class" value="[% CLASS | html %]"/>
-            <input type="hidden" name="method" value="[% METHOD | html %]"/>
+							</ol>
+						</fieldset>
 
-            <input type="submit" value="Konfiguration speichern" />
-        </fieldset>
-    </form>
+						<fieldset class="action">
+							<input type="hidden" name="save" value="1" />
+							<input type="hidden" name="class" value="[% CLASS | html %]"/>
+							<input type="hidden" name="method" value="[% METHOD | html %]"/>
 
-    <hr/>
+							<input type="submit" value="Konfiguration speichern" />
+						</fieldset>
+					</form>
 
-    <p>
-        <h5>Aktualisierungsstatus des Plugins:</h5>
-        [% IF last_upgraded %]
-            Das Plugin wurde zuletzt aktualisert am [% last_upgraded | $KohaDates with_hours => 1 %]
-        [% ELSE %]
-            Das Plugin wurde noch nicht aktualisiert.
-        [% END %]
-    </p>
+					<hr/>
+
+					<p>
+						<h5>Aktualisierungsstatus des Plugins:</h5>
+						[% IF last_upgraded %]
+							Das Plugin wurde zuletzt aktualisert am [% last_upgraded | $KohaDates with_hours => 1 %]
+						[% ELSE %]
+							Das Plugin wurde noch nicht aktualisiert.
+						[% END %]
+					</p>
+                </main>
+            </div>
+        </div>
+    </div>
 
 [% INCLUDE 'intranet-bottom.inc' %]
