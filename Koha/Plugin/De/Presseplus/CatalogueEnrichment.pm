@@ -44,14 +44,14 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.18";
+our $VERSION = "0.1.19";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
     author          => 'Jonathan Druart & LMSCloud GmbH',
     date_authored   => '2020-07-23',
-    date_updated    => "2025-10-02",
+    date_updated    => "2025-11-03",
     minimum_version => $MINIMUM_VERSION,
     maximum_version => undef,
     version         => $VERSION,
@@ -114,13 +114,6 @@ sub opac_head {
     .pp-images {
         text-align: center;
     }
-    #opac-detail #holdingst .itemnotes {
-      width: 8em;
-      display: table-cell;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
     #cat_additem #itemst 
     #opac-detail #holdingst .bookcover img {
         max-height: 100%;
@@ -148,7 +141,10 @@ sub opac_js {
         let pp_modal = $('<div id="pp-modal" class="modal"><div class="modal-dialog" role="document"><div class="modal-content"><div class="modal-header"><h1>' + biblio_title + ' </h1><button type="button" class="closebtn" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"><div class="row"><div class="col-lg-8"><div class="pp-images"></div></div><div class="col-lg-4"><div class="pp-toc"></div></div></div><div class="modal-footer"><div class="pp-show_toc chocolat-image"><a href="" class="chocolat-image fr no-underline blue">Show Table of Contents Image</a></div></div></div></div></div>');
         $(pp_modal).appendTo($('#opac-detail > #wrapper > .main'));
 
-        $("#holdingst .bookcover").each(function(){
+        $("#holdingst .bookcover").each(function() {
+            if ( $(this).find('.local-coverimg').find('img').parents("tr").find("td.notes").text().length > 0) {
+                $('#opac-detail #holdingst .itemnotes').css( { 'width' : '8em', 'display' : 'table-cell', 'overflow' : 'hidden', 'text-overflow' : 'ellipsis', 'white-space' : 'nowrap' } );
+            }
             var coverimages_divs = $(this).find('.local-coverimg');
             $(coverimages_divs[0]).find('img').on('click', function(e){
                 if ( $(this).parents("tr").find("td.notes").text().length ) {
@@ -189,7 +185,9 @@ sub opac_js {
     }
     | : '') . q|
     $(document).ready( function(){
-        $('#holdingst').dataTable().fnSettings().responsive.c.details.display = $.fn.dataTable.Responsive.display.childRow; 
+        if ( $('#holdingst').length > 0 ) {
+            $('#holdingst').dataTable().fnSettings().responsive.c.details.display = $.fn.dataTable.Responsive.display.childRow; 
+        }
         $( "#opac-detail #holdingst .notes" ).each(function( index ) {
             var newContent = $('<div/>').addClass('itemnotes').html(this.innerText);
             $(this).empty().append(newContent);
