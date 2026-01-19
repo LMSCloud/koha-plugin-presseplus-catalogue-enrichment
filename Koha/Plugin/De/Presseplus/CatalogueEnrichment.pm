@@ -145,7 +145,7 @@ sub opac_js {
         $("#holdingst .bookcover").each(function() {
             if ( $(this).find('.local-coverimg').find('img').parents("tr").find("td.notes").text().length > 0) {
                 // console.log("Local coverimg itemnotes count",$('#opac-detail #holdingst .itemnotes').length);
-				setItemNotesCSS = true;
+                setItemNotesCSS = true;
             }
             var coverimages_divs = $(this).find('.local-coverimg');
             $(coverimages_divs[0]).find('img').on('click', function(e){
@@ -194,7 +194,7 @@ sub opac_js {
             var newContent = $('<div/>').addClass('itemnotes').html(this.innerText);
             $(this).empty().append(newContent);
             if ( setItemNotesCSS ) {
-				$('#opac-detail #holdingst .itemnotes').css( { 'width' : '8em', 'display' : 'table-cell', 'overflow' : 'hidden', 'text-overflow' : 'ellipsis', 'white-space' : 'nowrap' } );
+                $('#opac-detail #holdingst .itemnotes').css( { 'width' : '8em', 'display' : 'table-cell', 'overflow' : 'hidden', 'text-overflow' : 'ellipsis', 'white-space' : 'nowrap' } );
             }
         });
     });
