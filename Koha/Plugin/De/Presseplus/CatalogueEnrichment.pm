@@ -44,14 +44,14 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.19";
+our $VERSION = "0.1.20";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
     author          => 'Jonathan Druart & LMSCloud GmbH',
     date_authored   => '2020-07-23',
-    date_updated    => "2025-11-03",
+    date_updated    => "2026-01-19",
     minimum_version => $MINIMUM_VERSION,
     maximum_version => undef,
     version         => $VERSION,
@@ -133,6 +133,7 @@ sub opac_js {
 
     return q?
     <script>
+    var setItemNotesCSS = false;
     ? . $self->getBstrapModal() .
     ( $self->retrieve_data('opac_item_cover_view_with_content') ? q|
     if ( $("#opac-detail").size() ) { // We are on the opac-detail page
@@ -143,7 +144,8 @@ sub opac_js {
 
         $("#holdingst .bookcover").each(function() {
             if ( $(this).find('.local-coverimg').find('img').parents("tr").find("td.notes").text().length > 0) {
-                $('#opac-detail #holdingst .itemnotes').css( { 'width' : '8em', 'display' : 'table-cell', 'overflow' : 'hidden', 'text-overflow' : 'ellipsis', 'white-space' : 'nowrap' } );
+                // console.log("Local coverimg itemnotes count",$('#opac-detail #holdingst .itemnotes').length);
+				setItemNotesCSS = true;
             }
             var coverimages_divs = $(this).find('.local-coverimg');
             $(coverimages_divs[0]).find('img').on('click', function(e){
@@ -191,12 +193,9 @@ sub opac_js {
         $( "#opac-detail #holdingst .notes" ).each(function( index ) {
             var newContent = $('<div/>').addClass('itemnotes').html(this.innerText);
             $(this).empty().append(newContent);
-            //if ( this.innerText.length > 0 && this.offsetWidth < this.scrollWidth ) {
-            //    var fullText = this.innerText;
-            //    $('<a>Mehr</a>').click( function( event ){
-            //        new BstrapModal('Inhalt',fullText,'').Show();
-            //    }).insertAfter(this);
-            //}
+            if ( setItemNotesCSS ) {
+				$('#opac-detail #holdingst .itemnotes').css( { 'width' : '8em', 'display' : 'table-cell', 'overflow' : 'hidden', 'text-overflow' : 'ellipsis', 'white-space' : 'nowrap' } );
+            }
         });
     });
     </script>
