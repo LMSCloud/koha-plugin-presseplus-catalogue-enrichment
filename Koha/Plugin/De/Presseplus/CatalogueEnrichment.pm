@@ -23,6 +23,7 @@ use C4::Auth;
 use C4::Charset;
 use C4::Search;        # enabled_staff_search_views
 use C4::Biblio qw( GetMarcFromKohaField GetMarcStructure IsMarcStructureInternal );
+use C4::Scrubber;
 
 use Koha::Libraries;
 use Koha::BiblioFrameworks;
@@ -44,14 +45,14 @@ use JSON qw( decode_json );
 use Try::Tiny;
 use Koha::Cache::Memory::Lite;
 
-our $VERSION = "0.1.20";
+our $VERSION = "0.1.21";
 our $MINIMUM_VERSION = "22.11";
 
 our $metadata = {
     name            => 'Catalogue enrichment plugin for Presseplus',
     author          => 'Jonathan Druart & LMSCloud GmbH',
     date_authored   => '2020-07-23',
-    date_updated    => "2026-01-19",
+    date_updated    => "2026-04-08",
     minimum_version => $MINIMUM_VERSION,
     maximum_version => undef,
     version         => $VERSION,
@@ -76,7 +77,13 @@ sub tool {
 
     my $cgi = $self->{'cgi'};
     
-    my $toolaction = $cgi->param('toolaction');
+    my $scrubber = C4::Scrubber->new();
+    
+    my $toolaction = scalar $cgi->param('toolaction');
+    $toolaction = $scrubber->scrub($toolaction) if ( $toolaction );
+    
+    my $submitted = scalar $cgi->param('submitted');
+    $submitted = $scrubber->scrub($submitted) if ( $submitted );
     
     if ( $toolaction && $toolaction eq 'enrichItem' ) {
         $self->enrichItem();
@@ -84,7 +91,7 @@ sub tool {
     elsif ( $toolaction && $toolaction eq 'catalogue' ) {
         $self->catalogue();
     }
-    elsif ( $cgi->param('submitted') ) {
+    elsif ( $submitted ) {
         $self->tool_step2();
     }
     else {
@@ -133,60 +140,62 @@ sub opac_js {
 
     return q?
     <script>
+    ? . $self->getBstrapModal() . q?
     var setItemNotesCSS = false;
-    ? . $self->getBstrapModal() .
-    ( $self->retrieve_data('opac_item_cover_view_with_content') ? q|
-    if ( $("#opac-detail").size() ) { // We are on the opac-detail page
-
-        let biblio_title = $(".biblio-title").html();
-        let pp_modal = $('<div id="pp-modal" class="modal"><div class="modal-dialog" role="document"><div class="modal-content"><div class="modal-header"><h1>' + biblio_title + ' </h1><button type="button" class="closebtn" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"><div class="row"><div class="col-lg-8"><div class="pp-images"></div></div><div class="col-lg-4"><div class="pp-toc"></div></div></div><div class="modal-footer"><div class="pp-show_toc chocolat-image"><a href="" class="chocolat-image fr no-underline blue">Show Table of Contents Image</a></div></div></div></div></div>');
-        $(pp_modal).appendTo($('#opac-detail > #wrapper > .main'));
-
-        $("#holdingst .bookcover").each(function() {
-            if ( $(this).find('.local-coverimg').find('img').parents("tr").find("td.notes").text().length > 0) {
-                // console.log("Local coverimg itemnotes count",$('#opac-detail #holdingst .itemnotes').length);
+    $(document).ready( function() {
+        if ( $("#opac-detail #holdingst .bookcover .local-coverimg img").length > 0 ) {
+            if ( $("#opac-detail #holdingst .bookcover .local-coverimg img").parents("tr").find("td.notes").text().length > 0) {
                 setItemNotesCSS = true;
             }
-            var coverimages_divs = $(this).find('.local-coverimg');
-            $(coverimages_divs[0]).find('img').on('click', function(e){
-                if ( $(this).parents("tr").find("td.notes").text().length ) {
-                    var toc = $(this).parents("tr").find("td.notes").text();
-                    $(".pp-toc").empty().append(toc);
-                } 
-                else if ( $(this).parents("tr").next("tr.child").find("span.dtr-title:contains('Notes')").parent().children("span.dtr-data").length ) {
-                    var toc = $(this).parents("tr").next("tr.child").find("span.dtr-title:contains('Notes')").parent().children("span.dtr-data").text();
-                    $(".pp-toc").empty().append(toc);
-                } 
-                else if ( $(this).parents("#catalogue_detail_biblio").length ) {
-                    var toc = $("#catalogue_detail_biblio .contents").clone();
-                    if ( !toc.length ) {
-                        return true;
+        }
+    ? .
+    ( $self->retrieve_data('opac_item_cover_view_with_content') ? q|
+        if ( $("#opac-detail").length > 0 ) { // We are on the opac-detail page
+
+            let biblio_title = $(".biblio-title").html();
+            let pp_modal = $('<div id="pp-modal" class="modal"><div class="modal-dialog" role="document"><div class="modal-content"><div class="modal-header"><h1>' + biblio_title + ' </h1><button type="button" class="closebtn" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"><div class="row"><div class="col-lg-8"><div class="pp-images"></div></div><div class="col-lg-4"><div class="pp-toc"></div></div></div><div class="modal-footer"><div class="pp-show_toc chocolat-image"><a href="" class="chocolat-image fr no-underline blue">Show Table of Contents Image</a></div></div></div></div></div>');
+            $(pp_modal).appendTo($('#opac-detail > #wrapper > .main'));
+
+            $("#holdingst .bookcover").each(function() {
+                var coverimages_divs = $(this).find('.local-coverimg');
+                $(coverimages_divs[0]).find('img').on('click', function(e){
+                    if ( $(this).parents("tr").find("td.notes").text().length ) {
+                        var toc = $(this).parents("tr").find("td.notes").text();
+                        $(".pp-toc").empty().append(toc);
+                    } 
+                    else if ( $(this).parents("tr").next("tr.child").find("span.dtr-title:contains('Notes')").parent().children("span.dtr-data").length ) {
+                        var toc = $(this).parents("tr").next("tr.child").find("span.dtr-title:contains('Notes')").parent().children("span.dtr-data").text();
+                        $(".pp-toc").empty().append(toc);
+                    } 
+                    else if ( $(this).parents("#catalogue_detail_biblio").length ) {
+                        var toc = $("#catalogue_detail_biblio .contents").clone();
+                        if ( !toc.length ) {
+                            return true;
+                        }
+                        $(".pp-toc").empty().append(toc);
                     }
-                    $(".pp-toc").empty().append(toc);
-                }
 
-                e.stopPropagation();
-                e.preventDefault();
+                    e.stopPropagation();
+                    e.preventDefault();
 
-                var coverimages_divs = $(this).parents('.cover-slider').find('.local-coverimg');
+                    var coverimages_divs = $(this).parents('.cover-slider').find('.local-coverimg');
 
-                var main_image_url = $(coverimages_divs[0]).find('a').attr('href');
-                var main_image = $("<div>", { class: 'chocolat-image', html: $("<a>", {href: main_image_url, html: $("<img>", {src: main_image_url } ) } ) } );
-                $(".pp-images").empty().append(main_image);
-                var toc_a = $(coverimages_divs[1]).find('a');
-                var show_toc = $(toc_a).clone();
-                $(show_toc).text(_("Zeige Inhaltsverzeichnis"));
-                $(".pp-show_toc").empty().append($(show_toc).clone());
+                    var main_image_url = $(coverimages_divs[0]).find('a').attr('href');
+                    var main_image = $("<div>", { class: 'chocolat-image', html: $("<a>", {href: main_image_url, html: $("<img>", {src: main_image_url } ) } ) } );
+                    $(".pp-images").empty().append(main_image);
+                    var toc_a = $(coverimages_divs[1]).find('a');
+                    var show_toc = $(toc_a).clone();
+                    $(show_toc).text(_("Zeige Inhaltsverzeichnis"));
+                    $(".pp-show_toc").empty().append($(show_toc).clone());
 
-                Chocolat(document.querySelectorAll('.chocolat-image a'))
+                    Chocolat(document.querySelectorAll('.chocolat-image a'))
 
-                $('#pp-modal').modal('show');
-                return false;
+                    $('#pp-modal').modal('show');
+                    return false;
+                });
             });
-        });
-    }
+        }
     | : '') . q|
-    $(document).ready( function(){
         if ( $('#holdingst').length > 0 ) {
             $('#holdingst').dataTable().fnSettings().responsive.c.details.display = $.fn.dataTable.Responsive.display.childRow; 
         }
@@ -301,6 +310,7 @@ sub intranet_js {
     my ( $self ) = @_;
 
     my $biblionumber = $self->{cgi}->param('biblionumber');
+    $biblionumber = int($biblionumber) if ($biblionumber);
     
     my $intranetJSadd = q?
     <script>
@@ -381,8 +391,12 @@ sub intranet_catalog_biblio_enhancements_toolbar_button {
     my $template = $self->get_template({
         file => 'toolbar-button.tt'
     });
+    
+    my $biblionumber = scalar $self->{cgi}->param('biblionumber');
+    $biblionumber = int($biblionumber) if ($biblionumber);
+    
     $template->param(
-        biblionumber => scalar $self->{cgi}->param('biblionumber')
+        biblionumber => scalar $biblionumber
     );
     $template->output;
     # Don't exit here!
@@ -488,11 +502,13 @@ sub tool_step2 {
 
     $template->param( plugin => $self );
 
-    my $issn_ean = $cgi->param('issn_ean') || ''; # FIXME Should be in the response, is that issn or ean?
-    my $release_year = $cgi->param('release_year') || '';
-    my $release_issue = $cgi->param('release_issue') || '';
-    my $issn = $cgi->param('issn') || '';
-    my $ean = $cgi->param('ean') || '';
+    my $scrubber = C4::Scrubber->new();
+    
+    my $issn_ean = $scrubber->scrub(scalar $cgi->param('issn_ean') || ''); # FIXME Should be in the response, is that issn or ean?
+    my $release_year = $scrubber->scrub(scalar $cgi->param('release_year') || '');
+    my $release_issue = $scrubber->scrub(scalar $cgi->param('release_issue') || '');
+    my $issn = $scrubber->scrub(scalar $cgi->param('issn') || '');
+    my $ean = $scrubber->scrub(scalar $cgi->param('ean') || '');
     
     my $duplicateCheck = ($cgi->param('duplicateCheck') || 'yes');
     if ( $duplicateCheck eq 'yes' ) {
@@ -551,12 +567,12 @@ sub tool_step2 {
 			$template->param(
 				errors => \@errors,
 				messages => \@messages,
-				issn_ean => $cgi->param('issn_ean'),
-				release_year => $cgi->param('release_year'),
-				release_issue => $cgi->param('release_issue'),
-				issn => $cgi->param('issn'),
-                title => $cgi->param('title'),
-				ean => $cgi->param('ean')
+				issn_ean => $scrubber->scrub(scalar $cgi->param('issn_ean') || ''),
+				release_year => $scrubber->scrub(scalar $cgi->param('release_year') || ''),
+				release_issue => $scrubber->scrub(scalar $cgi->param('release_issue') || ''),
+				issn => $scrubber->scrub(scalar $cgi->param('issn') || ''),
+                title => $scrubber->scrub(scalar $cgi->param('title') || ''),
+				ean => $scrubber->scrub(scalar $cgi->param('ean') || '')
 			);
 		}
     } catch {
@@ -629,6 +645,8 @@ sub tool_step2 {
 
 sub enrichItem {
     my ($self, $args) = @_;
+    
+    my $scrubber = C4::Scrubber->new();
 
     my $cgi = $self->{cgi};
     my $template = $self->get_template({
@@ -639,11 +657,13 @@ sub enrichItem {
     
     # The biblio we're working with
     my $biblionumber = $cgi->param('biblionumber');
+    $biblionumber    = int($biblionumber);
     my $biblio       = Koha::Biblios->find( $biblionumber );
     my $biblioitem   = Koha::Biblioitems->find( { biblionumber => $biblionumber } );
     die "no biblio for biblionumber=$biblionumber" unless $biblio; # FIXME handle that gracefully
     
     my $itemnumber   = $cgi->param('itemnumber');
+    $itemnumber      = int($itemnumber);
     my $item         = Koha::Items->find($itemnumber);
     die "no item for itemnumber=$itemnumber" unless $item; # FIXME handle that gracefully
     
@@ -654,7 +674,9 @@ sub enrichItem {
     }
     # try to identify the year and the issuenumber
     my $issueyear = $self->{cgi}->param('release_year');
+    $issueyear    = int($issueyear);
     my $issuenumber = $self->{cgi}->param('release_issue');
+    $issuenumber  = int($issuenumber);
     
     if ( !$issueyear || !$issuenumber || ($issueyear && $issueyear !~ /^2[0-9]{3}$/) || ($issuenumber && $issuenumber !~ /^[0-9]{1,3}$/) ) {
         my $enumchron = $item->enumchron;
@@ -704,14 +726,14 @@ sub enrichItem {
         issuenumber => $issuenumber,
         apikey => $self->retrieve_data('apikey'),
         enrichItem => 1,
-        toolaction => $cgi->param('toolaction'),
+        toolaction => $scrubber->scrub(scalar $cgi->param('toolaction') || ''),
         C4::Search::enabled_staff_search_views,
     );
 
     if ( $issueyear && $issuenumber && $issueyear =~ /^2[0-9]{3}$/ && $issuenumber =~ /^[0-9]{1,3}$/ ) {
-        my $ean = $self->{cgi}->param('ean');
+        my $ean = $scrubber->scrub(scalar $self->{cgi}->param('ean') || '');
         $ean = $biblioitem->ean if (!$ean);
-        my $issn = $self->{cgi}->param('issn');
+        my $issn = $scrubber->scrub(scalar $self->{cgi}->param('issn') || '');
         $issn = $biblioitem->issn if (!$issn);
         
         my $release_code = $issueyear . $issuenumber;
@@ -869,6 +891,8 @@ sub enrichItem {
 sub catalogue {
     my ($self, $args) = @_;
 
+    my $scrubber = C4::Scrubber->new();
+    
     my $cgi = $self->{cgi};
     my $template = $self->get_template({
         file => 'catalogue.tt'
@@ -876,6 +900,8 @@ sub catalogue {
 
     # The biblio we're working with
     my $biblionumber = $self->{cgi}->param('biblionumber');
+    $biblionumber = int($biblionumber) if ($biblionumber);
+    
     my $biblio = Koha::Biblios->find( $biblionumber );
     my $biblioitem = Koha::Biblioitems->find( { biblionumber => $biblionumber } );
     die "no biblio for biblionumber=$biblionumber" unless $biblio; # FIXME handle that gracefully
@@ -885,18 +911,18 @@ sub catalogue {
         biblio => $biblio,
         biblioitem => $biblioitem,
         apikey => $self->retrieve_data('apikey'),
-        toolaction => $cgi->param('toolaction'),
+        toolaction => $scrubber->scrub(scalar $cgi->param('toolaction') || ''),
         C4::Search::enabled_staff_search_views,
     );
 
     my ( @messages, @errors );
     if ( $cgi->param('submitted') ) {
 
-        my $issn_ean = $cgi->param('issn_ean'); 
-        my $release_year = $cgi->param('release_year') || '';
-        my $release_issue = $cgi->param('release_issue') || '';
-        my $issn = $cgi->param('issn') || '';
-        my $ean = $cgi->param('ean') || '';
+        my $issn_ean = $scrubber->scrub(scalar $cgi->param('issn_ean') || '' ); 
+        my $release_year = $scrubber->scrub(scalar $cgi->param('release_year') || '');
+        my $release_issue = $scrubber->scrub(scalar $cgi->param('release_issue') || '');
+        my $issn = $scrubber->scrub(scalar $cgi->param('issn') || '');
+        my $ean = $scrubber->scrub(scalar $cgi->param('ean') || '');
         
         my $issuenumber;
         if ( $release_issue && $release_year ) {
