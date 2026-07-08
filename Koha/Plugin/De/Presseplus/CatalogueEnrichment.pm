@@ -345,21 +345,64 @@ sub intranet_js {
                     });
                 }
             }
-            $( "#catalog_detail #holdings_table .itemnotes, #cat_additem #itemst .itemnotes" ).each(function( index ) {
+            // #cat_additem #itemst is still server-side rendered, so its read-more can
+            // stay inline on document.ready.
+            $( "#cat_additem #itemst .itemnotes" ).each(function( index ) {
                 if ( this.innerText.length > 0 && this.offsetWidth < this.scrollWidth ) {
                     var fullText = this.innerText;
-                    $('<a>Mehr lesen</a>').click( function( event ){
+                    $('<a class="pp-readmore">Mehr lesen</a>').click( function( event ){
                         new BstrapModal('Inhalt',fullText,'').Show();
                     }).insertAfter(this);
                 }
             });
-            $( "#catalog_detail #holdings_table tbody tr" ).each(function( index ) {
-                var itemnumber = $(this).data("itemnumber");
-                var href = '? .
-                sprintf q|/cgi-bin/koha/plugins/run.pl?class=%s&method=tool&toolaction=enrichItem&biblionumber=%s|, $self->{metadata}->{class}, ($biblionumber||'')
-                . q?&itemnumber=' + itemnumber;
-                $(this).find('td.actions ul').append('<li><a href="' + href + '"><i class="fa fa-book"></i> Anreichern mit Presseplus</a></li>');
-            });
+
+            // Holdings enrichment must work on BOTH versions during the transition:
+            //   22.11  -> #holdings_table is server-side rendered (rows present at ready)
+            //   25.11  -> #holdings_table is API-driven (rows arrive via ajax / draw.dt)
+            // Idempotent (marker-class guarded) so it is safe to run from both paths.
+            var enrichPresseplusHoldings = function() {
+                $( "#catalog_detail #holdings_table .itemnotes" ).each(function( index ) {
+                    if ( $(this).next('a.pp-readmore').length ) return;
+                    if ( this.innerText.length > 0 && this.offsetWidth < this.scrollWidth ) {
+                        var fullText = this.innerText;
+                        $('<a class="pp-readmore">Mehr lesen</a>').click( function( event ){
+                            new BstrapModal('Inhalt',fullText,'').Show();
+                        }).insertAfter(this);
+                    }
+                });
+                var holdingsTable = null;
+                if ( $.fn.dataTable && $.fn.dataTable.isDataTable('#catalog_detail #holdings_table') ) {
+                    holdingsTable = $('#catalog_detail #holdings_table').DataTable();
+                }
+                $( "#catalog_detail #holdings_table tbody tr" ).each(function( index ) {
+                    var $row = $(this);
+                    if ( $row.find('a.pp-enrich-link').length ) return;
+                    // Server-side rendered rows expose the id as data-itemnumber; the
+                    // API-driven table does not, so fall back to the DataTables row data.
+                    var itemnumber = $row.data("itemnumber");
+                    if ( !itemnumber && holdingsTable ) {
+                        var rowData = holdingsTable.row(this).data();
+                        if ( rowData ) itemnumber = rowData.item_id;
+                    }
+                    if ( !itemnumber ) return;
+                    var href = '? .
+                    sprintf q|/cgi-bin/koha/plugins/run.pl?class=%s&method=tool&toolaction=enrichItem&biblionumber=%s|, $self->{metadata}->{class}, ($biblionumber||'')
+                    . q?&itemnumber=' + itemnumber;
+                    $row.find('td.actions ul').append('<li><a class="dropdown-item pp-enrich-link" href="' + href + '"><i class="fa fa-book"></i> Anreichern mit Presseplus</a></li>');
+                });
+            };
+
+            // 25.11: bind to draw.dt for the initial ajax load and every re-draw.
+            // Delegate from document, not the table: build_items_table() destroys and
+            // replaceWith()es the table node when filters toggle, which would drop a
+            // handler bound directly to #holdings_table. draw.dt bubbles up.
+            $(document)
+                .off('draw.dt.presseplusHoldings')
+                .on('draw.dt.presseplusHoldings', '#catalog_detail #holdings_table', enrichPresseplusHoldings);
+
+            // 22.11: rows are already in the DOM at ready. On 25.11 this is a no-op on
+            // the empty tbody; the draw.dt handler above does the work after ajax.
+            enrichPresseplusHoldings();
         });
     </script>
     
