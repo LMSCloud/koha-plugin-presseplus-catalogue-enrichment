@@ -1,3 +1,7 @@
+[% USE raw %]
+[% USE Asset %]
+[% USE Koha %]
+[% USE Branches %]
 [% INCLUDE 'doc-head-open.inc' %]
 <title>Koha &rsaquo; Presseplus Plugin &rsaquo; Kataloganreicherung</title>
 [% INCLUDE 'doc-head-close.inc' %]
@@ -5,26 +9,34 @@
 </head>
 
 <body id="plugin_presseplus" class="catalog">
-    [% INCLUDE 'header.inc' %]
+[% INCLUDE 'html_helpers.inc' %]
+
+[% WRAPPER 'header.inc' %]
     [% INCLUDE 'cat-search.inc' %]
+[% END %]
 
-    <div id="breadcrumbs">
-        <a href="/cgi-bin/koha/mainpage.pl">Home</a>
-        &rsaquo;
-        <a href="/cgi-bin/koha/catalogue/search.pl">Katalog</a>
-        &rsaquo;
-        <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber | uri %]">[% biblio.title | html %]</a>
-        &rsaquo;
-        Presseplus Plugin
-        &rsaquo;
-        Kataloganreicherung
-    </div>
+[% WRAPPER 'sub-header.inc' %]
+    [% WRAPPER breadcrumbs %]
+        [% WRAPPER breadcrumb_item %]
+            <a href="/cgi-bin/koha/catalogue/search.pl">Katalog</a>
+        [% END %]
+        [% WRAPPER breadcrumb_item %]
+            <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=[% biblio.biblionumber | uri %]">[% biblio.title | html %]</a>
+        [% END %]
+        [% WRAPPER breadcrumb_item %]
+            <span>Presseplus Plugin</span>
+        [% END %]
+        [% WRAPPER breadcrumb_item bc_active= 1 %]
+            <span>Kataloganreicherung</span>
+        [% END %]
+    [% END #/ WRAPPER breadcrumbs %]
+[% END #/ WRAPPER sub-header.inc %]
 
-    <div class="main container-fluid">
-        <div class="row">
-            <div class="col-sm-10 col-sm-push-2">
-                <main>
-                    <div class="row">
+<div class="main container-fluid">
+    <div class="row">
+        [%# keep both grid idioms so the sidebar sits left on either Bootstrap: push/pull (legacy) + order-* (Bootstrap 5) %]
+        <div class="col-sm-10 col-sm-push-2 order-md-2">
+            <main>
 
                         <h1>Kataloganreicherung mit Presseplus</h1>
                         [% IF errors.size %]
@@ -98,15 +110,15 @@
                                 <ol>
                                     <li>
                                         <label for="issn_ean" class="required">Zeitschrift (ISSN oder EAN): </label>
-                                        <select class="journal-selection" name="issn_ean" required="required" class="required"></select>
+                                        <select class="journal-selection required" name="issn_ean" id="issn_ean" required="required"></select>
                                     </li>
                                     <li>
-                                        <label for="release_code" class="required">Jahrgang: </label>
-                                        <input class="journal-year" type="text" name="release_year" value="" required="required" class="required" />
+                                        <label for="release_year" class="required">Jahrgang: </label>
+                                        <input class="journal-year required" type="text" name="release_year" id="release_year" value="" required="required" />
                                     </li>
                                     <li>
-                                        <label for="release_code" class="required">Heft: </label>
-                                        <input class="journal-issue" type="text" name="release_issue" value="" required="required" class="required" />
+                                        <label for="release_issue" class="required">Heft: </label>
+                                        <input class="journal-issue required" type="text" name="release_issue" id="release_issue" value="" required="required" />
                                     </li>
                                 </ol>
 
@@ -121,17 +133,15 @@
                         </fieldset>
                         [% END %]
                         
-                    </div>
-                </main>
-            </div> <!-- /.col-sm-10.col-sm-push-2 -->
-
-            <div class="col-sm-2 col-sm-pull-10">
-                <aside>
-                    [% INCLUDE 'biblio-view-menu.inc' %]
-                </aside>
-            </div> <!-- /.col-sm-2.col-sm-pull-10 -->
-         </div> <!-- /.row -->
-    </div>
+            </main>
+        </div> <!-- /.col main -->
+        <div class="col-sm-2 col-sm-pull-10 order-md-1">
+            <aside>
+                [% INCLUDE 'biblio-view-menu.inc' %]
+            </aside>
+        </div> <!-- /.col aside -->
+    </div> <!-- /.row -->
+</div> <!-- /.main.container-fluid -->
 
 [% INCLUDE 'select2.inc' %]
 
