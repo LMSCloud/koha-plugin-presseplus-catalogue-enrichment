@@ -195,9 +195,24 @@ sub opac_js {
                 });
             });
         }
-    | : '') . q|
+    | : '') . q%
         if ( $('#holdingst').length > 0 ) {
-            $('#holdingst').dataTable().fnSettings().responsive.c.details.display = $.fn.dataTable.Responsive.display.childRow; 
+            var settings;
+
+            if ($.fn.dataTable.isDataTable($('#holdingst'))) {
+                // Funktioniert sowohl mit alten als auch neuen DataTables-Versionen
+                settings = $('#holdingst').DataTable().settings()[0];
+            } else if (typeof $('#holdingst').fnSettings === 'function') {
+                // Fallback für sehr alte, nur per fnX-API initialisierte Tabellen
+                settings = $('#holdingst').dataTable().fnSettings();
+            }
+
+            if (settings) {
+                var responsiveInstance = settings._responsive || settings.responsive;
+                if ( responsiveInstance ) {
+                    responsiveInstance.c.details.display = $.fn.dataTable.Responsive.display.childRow;
+                }
+            }
         }
         $( "#opac-detail #holdingst .notes" ).each(function( index ) {
             var newContent = $('<div/>').addClass('itemnotes').html(this.innerText);
@@ -208,7 +223,7 @@ sub opac_js {
         });
     });
     </script>
-    |;
+    %;
 }
 
 sub intranet_head {
