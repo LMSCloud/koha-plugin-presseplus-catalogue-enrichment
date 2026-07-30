@@ -101,6 +101,8 @@
                             <div class="journalNotFound error">Für den ausgewählten Titel konnte weder anhand EAN, ISSN noch über den Titel ein passendes Presseplus-Abonnement ermittelt werden. Bitte wählen Sie das passende Presseplus-Abonnment aus.</div>
                             <div class="noJournalListAvailable error">Ihre aktuellen Presseplus-Abonnements konnten nicht ermittelt werden. Bitte geben Sie in der Presseplus-Plugin-Konfiguration den API-Zugriffschlüssel ihrer Bibliothek bei Presseplus an.</div>
                             <form method="post" class="validated">
+                                [%# Koha's CSRF middleware rejects any POST without a token; the include is missing before 24.05 %]
+                                [% TRY %][% PROCESS 'csrf-token.inc' %][% CATCH %][% END %]
                                 <input type="hidden" name="class" value="[% CLASS | html %]"/>
                                 <input type="hidden" name="method" value="[% METHOD | html %]"/>
                                 <input type="hidden" name="toolaction" value="[% toolaction | html %]"/>

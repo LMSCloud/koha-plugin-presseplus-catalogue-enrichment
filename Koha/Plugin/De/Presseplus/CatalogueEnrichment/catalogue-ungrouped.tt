@@ -40,6 +40,8 @@
                                     [% END %]
                                     <br>Soll das Heft dennoch angelegt werden?<br><br>
                                     <form id="confirmDuplicate" method="post">
+                                        [%# Koha's CSRF middleware rejects any POST without a token; the include is missing before 24.05 %]
+                                        [% TRY %][% PROCESS 'csrf-token.inc' %][% CATCH %][% END %]
                                         <input type="hidden" name="class" value="[% CLASS | html %]"/>
                                         <input type="hidden" name="method" value="[% METHOD | html %]"/>
                                         <input type="hidden" name="issn" value="[% issn | html %]"/>
@@ -91,6 +93,8 @@
                         <div class="noJournalListAvailable error">Ihre aktuellen Presseplus-Abonnements konnten nicht ermittelt werden. Bitte geben Sie in der Presseplus-Plugin-Konfiguration den API-Zugriffschlüssel ihrer Bibliothek bei Presseplus an.</div>
 
                         <form id="issueNew" method="post" class="validated">
+                            [%# Koha's CSRF middleware rejects any POST without a token; the include is missing before 24.05 %]
+                            [% TRY %][% PROCESS 'csrf-token.inc' %][% CATCH %][% END %]
                             <input type="hidden" name="class" value="[% CLASS | html %]"/>
                             <input type="hidden" name="method" value="[% METHOD | html %]"/>
                             <input type="hidden" name="issn" value="[% issn | html %]"/>
