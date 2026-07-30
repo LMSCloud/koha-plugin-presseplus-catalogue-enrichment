@@ -872,59 +872,77 @@ sub enrichItem {
             }
             $item->store if ($changed);
             
-            my $coverImages = $item->cover_images;
-            $coverImages->delete if ( $coverImages );
-                    
+            # The images have to be retrieved before the existing ones are dropped:
+            # an empty or failing Presseplus response must not leave the item
+            # without the cover it had.
+            my ( $image, $toc_image );
+            my ( $image_failed, $toc_image_failed );
+
             try {
-                my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
-                if ( $image ) {
-                    Koha::CoverImage->new(
-                        {
-                            itemnumber => $item->itemnumber,
-                            src_image => $image,
-                            dont_scale => 1
-                        }
-                    )->store;
-                    push @messages, {
-                        code => 'success_on_retrieve_image',
-                    };
-                } else {
-                    push @messages, {
-                        code => 'no_cover_image',
-                    };
-                }
+                $image = $self->retrieve_cover_image( $issn_ean, $release_code );
             } catch {
+                $image_failed = 1;
                 push @errors, {
                     code => 'error_on_retrieve_image',
                     error => $_,
                 };
             };
-            
+
             if ( $self->retrieve_data('toc_image') ) {
                 try {
-                    my $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
-                    if ( $toc_image ) {
-                        Koha::CoverImage->new(
-                            { 
-                                    itemnumber => $item->itemnumber, 
-                                    src_image => $toc_image, 
-                                    dont_scale => 1 
-                            }
-                        )->store;
-                        push @messages, {
-                            code => 'success_on_retrieve_toc_image',
-                        };
-                    } else {
-                        push @messages, {
-                            code => 'no_toc_image',
-                        };
-                    }
+                    $toc_image = $self->retrieve_toc_image( $issn_ean, $release_code );
                 } catch {
+                    $toc_image_failed = 1;
                     push @errors, {
                         code => 'error_on_retrieve_toc_image',
                         error => $_,
                     };
                 };
+            }
+
+            $item->cover_images->delete if ( $image || $toc_image );
+
+            if ( $image ) {
+                Koha::CoverImage->new(
+                    {
+                        itemnumber => $item->itemnumber,
+                        (
+                            $self->retrieve_data('attach_cover_to_biblio')
+                            ? ( biblionumber => $item->biblionumber )
+                            : ()
+                        ),
+                        src_image => $image,
+                        dont_scale => 1
+                    }
+                )->store;
+                push @messages, {
+                    code => 'success_on_retrieve_image',
+                };
+            }
+            elsif ( !$image_failed ) {
+                push @messages, {
+                    code => 'no_cover_image',
+                };
+            }
+
+            if ( $self->retrieve_data('toc_image') ) {
+                if ( $toc_image ) {
+                    Koha::CoverImage->new(
+                        {
+                                itemnumber => $item->itemnumber,
+                                src_image => $toc_image,
+                                dont_scale => 1
+                        }
+                    )->store;
+                    push @messages, {
+                        code => 'success_on_retrieve_toc_image',
+                    };
+                }
+                elsif ( !$toc_image_failed ) {
+                    push @messages, {
+                        code => 'no_toc_image',
+                    };
+                }
             }
 
             $template->param(
