@@ -902,12 +902,17 @@ sub enrichItem {
 
             $item->cover_images->delete if ( $image || $toc_image );
 
+            my $attach_to_biblio =
+                   $image
+                && $self->retrieve_data('attach_cover_to_biblio')
+                && $self->claim_biblio_cover( $item, $self->issue_sort_key( $issueyear, $issuenumber ) );
+
             if ( $image ) {
                 Koha::CoverImage->new(
                     {
                         itemnumber => $item->itemnumber,
                         (
-                            $self->retrieve_data('attach_cover_to_biblio')
+                            $attach_to_biblio
                             ? ( biblionumber => $item->biblionumber )
                             : ()
                         ),
@@ -1044,11 +1049,14 @@ sub catalogue {
         try {
             my $image = $self->retrieve_cover_image( $issn_ean, $release_code );
             if ( $image ) {
+                my $attach_to_biblio =
+                       $self->retrieve_data('attach_cover_to_biblio')
+                    && $self->claim_biblio_cover( $item, $self->issue_sort_key( $release_year, $release_issue ) );
                 Koha::CoverImage->new(
                     {
                         itemnumber => $item->itemnumber,
                         (
-                            $self->retrieve_data('attach_cover_to_biblio')
+                            $attach_to_biblio
                             ? ( biblionumber => $item->biblionumber )
                             : ()
                         ),
@@ -1127,6 +1135,47 @@ sub getApiKeys {
         }
     }
     return @apikeys;
+}
+
+sub issue_sort_key {
+    my ( $self, $year, $issue ) = @_;
+
+    return 0 unless ( $year && $year =~ /^[0-9]{4}$/ );
+    $issue = 0 unless ( $issue && $issue =~ /^[0-9]{1,3}$/ );
+
+    return $year * 1000 + $issue;
+}
+
+sub issue_sort_key_for_item {
+    my ( $self, $item ) = @_;
+
+    my $enumchron = $item ? ( $item->enumchron // '' ) : '';
+    return 0 unless ( $enumchron =~ m{^\s*([0-9]{1,3})\s*/\s*([0-9]{4})\s*$} );
+
+    return $self->issue_sort_key( $2, $1 );
+}
+
+# A title record shows a single cover, and neither interface picks it by issue:
+# the staff detail page orders the images by itemnumber, the OPAC does not order
+# them at all, so the oldest issue would always win. Keep the newest issue linked
+# to the title and leave images attached by hand (those without an itemnumber)
+# untouched.
+sub claim_biblio_cover {
+    my ( $self, $item, $issue_key ) = @_;
+
+    my $biblio = Koha::Biblios->find( $item->biblionumber ) or return 0;
+
+    my @linked =
+        grep { $_->itemnumber && $_->itemnumber != $item->itemnumber } $biblio->cover_images->as_list;
+
+    for my $cover_image ( @linked ) {
+        my $linked_item = Koha::Items->find( $cover_image->itemnumber );
+        return 0 if ( $self->issue_sort_key_for_item($linked_item) > $issue_key );
+    }
+
+    $_->biblionumber(undef)->store for @linked;
+
+    return 1;
 }
 
 sub retrieve_toc_image {
