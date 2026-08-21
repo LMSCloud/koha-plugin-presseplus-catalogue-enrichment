@@ -1155,27 +1155,35 @@ sub issue_sort_key_for_item {
     return $self->issue_sort_key( $2, $1 );
 }
 
-# A title record shows a single cover, and neither interface picks it by issue:
-# the staff detail page orders the images by itemnumber, the OPAC does not order
-# them at all, so the oldest issue would always win. Keep the newest issue linked
-# to the title and leave images attached by hand (those without an itemnumber)
-# untouched.
+# A title record shows a single cover, and the interfaces that have to pick one
+# from the set do not order it: catalogue/image.pl and opac/opac-image.pl take
+# whatever row the database hands back first. The newest issue therefore only
+# wins reliably if it is the only issue linked to the title, so reduce the set
+# to one on every enrichment - including the ones this plugin linked before.
+# Images attached by hand (those without an itemnumber) are left alone: they
+# would be reachable from nowhere with their biblionumber gone.
 sub claim_biblio_cover {
     my ( $self, $item, $issue_key ) = @_;
 
-    my $biblio = Koha::Biblios->find( $item->biblionumber ) or return 0;
+    my @linked = grep { $_->itemnumber && $_->itemnumber != $item->itemnumber }
+        Koha::CoverImages->search( { biblionumber => $item->biblionumber } )->as_list;
 
-    my @linked =
-        grep { $_->itemnumber && $_->itemnumber != $item->itemnumber } $biblio->cover_images->as_list;
-
+    # The newest issue already linked to the title, if any beats the one we are
+    # enriching.
+    my ( $newest, $newest_key ) = ( undef, $issue_key );
     for my $cover_image ( @linked ) {
-        my $linked_item = Koha::Items->find( $cover_image->itemnumber );
-        return 0 if ( $self->issue_sort_key_for_item($linked_item) > $issue_key );
+        my $key = $self->issue_sort_key_for_item( Koha::Items->find( $cover_image->itemnumber ) );
+        ( $newest, $newest_key ) = ( $cover_image, $key ) if ( $key > $newest_key );
     }
 
-    $_->biblionumber(undef)->store for @linked;
+    # Unlink the superseded issues even when the cover being stored is not the
+    # one that wins: only the title link goes, the image stays on its own issue.
+    for my $cover_image ( @linked ) {
+        next if ( $newest && $cover_image->imagenumber == $newest->imagenumber );
+        $cover_image->biblionumber(undef)->store;
+    }
 
-    return 1;
+    return $newest ? 0 : 1;
 }
 
 sub retrieve_toc_image {
